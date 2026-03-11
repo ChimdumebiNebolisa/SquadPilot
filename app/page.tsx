@@ -64,9 +64,8 @@ export default function Home() {
         <header className="premium-panel rounded-card border border-border/80 px-5 py-5 md:px-6 md:py-6">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-muted">FPL SquadPilot</p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white md:text-3xl">Next Gameweek Control Center</h1>
-              <p className="mt-2 text-sm text-muted">Generate a premium-ready XI, captaincy call, and ranked depth map in one pass.</p>
+              <h1 className="text-2xl font-semibold tracking-tight text-white md:text-3xl">FPL SquadPilot</h1>
+              <p className="mt-2 text-sm text-muted">Generate an XI, captaincy call, and ranked depth map based on PL data in one pass.</p>
             </div>
             <button
               type="button"
