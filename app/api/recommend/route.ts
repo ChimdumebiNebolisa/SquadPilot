@@ -11,6 +11,7 @@ import type { TeamImportResult } from "@/lib/fpl/types";
 import { scorePlayers } from "@/lib/scoring/score";
 import { V1_FIXED_WEIGHTS } from "@/lib/scoring/weights";
 import { buildRecommendation } from "@/lib/solver/recommend";
+import { checkRateLimit } from "@/lib/server/rate-limit";
 
 const TEAM_ID_PATTERN = /^\d{1,10}$/;
 
@@ -33,6 +34,27 @@ function parseTeamId(value: unknown): string | null {
 
 export async function POST(request: Request) {
   try {
+    const forwardedFor = request.headers.get("x-forwarded-for");
+    const clientKey = forwardedFor?.split(",")[0]?.trim() || "local";
+    const rateLimit = checkRateLimit(clientKey);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: {
+            code: "RATE_LIMITED",
+            message: "Too many requests. Please retry shortly.",
+          },
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+          },
+        },
+      );
+    }
+
     const body = (await request.json().catch(() => ({}))) as { teamId?: unknown };
     const teamId = parseTeamId(body.teamId);
 
@@ -136,6 +158,20 @@ export async function POST(request: Request) {
     }
 
     if (error instanceof FplHttpError) {
+      if (error.status === 429) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: {
+              code: "RATE_LIMITED",
+              message: "FPL rate limited this request. Please retry shortly.",
+              status: error.status,
+            },
+          },
+          { status: 429 },
+        );
+      }
+
       return NextResponse.json(
         {
           ok: false,
