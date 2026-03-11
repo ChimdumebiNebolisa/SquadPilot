@@ -36,9 +36,17 @@ export interface FactorContribution {
   contribution: number;
 }
 
+export interface PlayerExplanation {
+  summary: string;
+  whyPicked: string;
+  mainRisk: string;
+  confidence: "High" | "Medium" | "Low";
+  tags: string[];
+}
+
 export interface ProjectedPlayer extends NormalizedPlayer {
   projectedScore: number;
   projectedPoints: number;
   contributions: FactorContribution[];
-  explanation: string;
+  explanation: PlayerExplanation;
 }
