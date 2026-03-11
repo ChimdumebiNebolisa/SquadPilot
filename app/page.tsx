@@ -104,31 +104,27 @@ export default function Home() {
 
         {uiState === "success" && recommendation && (
           <>
-            <section className="premium-panel-elevated rounded-card border border-border/70 px-3 py-2.5 md:px-4 md:py-3.5">
-              <div className="grid gap-2 md:grid-cols-6">
-                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
+            <section className="premium-panel-elevated rounded-card border border-border/70 px-2.5 py-2 md:px-3.5 md:py-2.5">
+              <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 lg:grid-cols-5">
+                <article className="rounded-lg bg-background/35 px-2.5 py-2 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">GW</p>
-                  <p className="mt-1 text-xl font-semibold text-white">{response?.data.nextGw}</p>
+                  <p className="mt-0.5 text-lg font-semibold text-white">{response?.data.nextGw}</p>
                 </article>
-                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
+                <article className="rounded-lg bg-background/35 px-2.5 py-2 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Budget</p>
-                  <p className="mt-1 text-xl font-semibold text-white">£{recommendation.budgetUsed.toFixed(1)}m</p>
+                  <p className="mt-0.5 text-lg font-semibold text-white">£{recommendation.budgetUsed.toFixed(1)}m</p>
                 </article>
-                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
+                <article className="rounded-lg bg-background/35 px-2.5 py-2 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Captain</p>
-                  <p className="mt-1 text-base font-semibold text-white">{recommendation.captain.webName}</p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-white">{recommendation.captain.webName}</p>
                 </article>
-                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
+                <article className="rounded-lg bg-background/35 px-2.5 py-2 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Vice</p>
-                  <p className="mt-1 text-base font-semibold text-white">{recommendation.viceCaptain.webName}</p>
+                  <p className="mt-0.5 truncate text-sm font-semibold text-white">{recommendation.viceCaptain.webName}</p>
                 </article>
-                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
+                <article className="rounded-lg bg-background/35 px-2.5 py-2 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Captain 5+ Chance</p>
-                  <p className="mt-1 text-xl font-semibold text-brand">{recommendation.captain.chanceOfFivePlusPoints.toFixed(1)}%</p>
-                </article>
-                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
-                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Solver</p>
-                  <p className="mt-1 text-base font-semibold capitalize text-white">{recommendation.solver.mode}</p>
+                  <p className="mt-0.5 text-lg font-semibold text-brand">{recommendation.captain.chanceOfFivePlusPoints.toFixed(1)}%</p>
                 </article>
               </div>
             </section>

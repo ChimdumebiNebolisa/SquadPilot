@@ -60,15 +60,17 @@ function PlayerChip({
       }`}
     >
       <div className="flex items-start justify-between gap-1.5">
-        <div className="min-w-0">
-          <p className="line-clamp-2 text-[14px] font-semibold leading-tight text-white">{player.webName}</p>
+        <div className="min-w-0 flex-1 pr-1">
+          <p className="truncate text-[13px] font-semibold leading-tight text-white" title={player.webName}>{player.webName}</p>
           <p className="mt-0.5 text-[10px] uppercase tracking-[0.09em] text-muted">
             {club} · {player.position}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[26px] font-semibold leading-none text-brand">{player.projectedPoints.toFixed(1)}</p>
-          <p className="mt-0.5 text-[10px] uppercase tracking-[0.08em] text-muted">Projected Pts</p>
+          <div className="flex items-center justify-end gap-1">
+            <span className="text-[10px] leading-none text-brand/70">↗</span>
+            <p className="text-[26px] font-semibold leading-none text-brand">{player.projectedPoints.toFixed(1)}</p>
+          </div>
         </div>
       </div>
 
