@@ -7,7 +7,8 @@ Portfolio-oriented web app that recommends one projected Fantasy Premier League 
 - MVP build path is implemented through Milestone 6.
 - App generates a legal recommended 15-man squad, starting XI, captain, vice-captain, and bench order.
 - One-click generation flow is shipped (no Team ID input/import).
-- Results dashboard includes pitch, bench, dense squad cards, and structured player insight panel.
+- Results dashboard is pitch-first with a compact control strip, Starting XI hero board, bench depth row, grouped Recommended 15, and structured Player Insight panel.
+- Player decision surfaces include projected points and calibrated 5+ points chance, with deeper rationale in the right-side intelligence brief.
 
 ## Stack
 
@@ -50,7 +51,7 @@ http://localhost:3000
 - `components/` - pitch, bench, player card, and explanation presentation
 - `lib/fpl/` - FPL fetchers and normalization for next-gameweek data
 - `lib/recommendation/` - shared API response/view types for UI rendering
-- `lib/scoring/` - fixed-weight feature scoring and explanation generation
+- `lib/scoring/` - fixed-weight feature scoring, calibrated probability modeling (5+ chance), and explanation generation
 - `lib/solver/` - MILP recommendation model + fallback heuristic
 - `lib/server/rate-limit.ts` - basic inbound route throttling
 
@@ -68,6 +69,8 @@ http://localhost:3000
 - Upstream 429 responses use exponential backoff and return clear retry states.
 - Route applies basic per-client inbound throttling and returns `RATE_LIMITED` on 429.
 - The app is intentionally a one-click recommendation flow without Team ID handling.
+- Recommended squad selection blends projected score with calibrated chance-of-5+ points as a secondary optimization signal.
+- Starting XI cards are intentionally quick-scan and lightweight; richer context (probability, confidence, and rationale) is concentrated in the Player Insight panel.
 
 ## Key Technical Decisions
 
@@ -87,12 +90,12 @@ http://localhost:3000
 - Reason chosen: faster iteration and consistent visual primitives.
 - Trade-offs/downside: utility class strings can grow long if not kept disciplined.
 
-### 3) Fixed-weight scoring + template explanations
+### 3) Fixed-weight scoring + calibrated probability + template explanations
 
-- Decision: use explicit weighted factors with template-generated explanation text.
+- Decision: use explicit weighted factors with calibrated chance-of-5+ modeling and template-generated explanation text.
 - Context / constraint: MVP must be explainable and fast to ship.
 - Alternatives considered: ML model or free-form AI explanation generation.
-- Reason chosen: deterministic behavior and direct traceability from factors to UI explanation.
+- Reason chosen: deterministic behavior, direct traceability from factors to UI explanation, and a user-friendly probability metric for decision support.
 - Trade-offs/downside: lower sophistication than learned forecasts.
 
 ### 4) MILP primary solver with fallback heuristic
