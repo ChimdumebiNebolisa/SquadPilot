@@ -16,7 +16,13 @@ export interface PlayerView {
   projectedPoints: number;
   chanceOfPlayingNextRound: number | null;
   status: string;
-  explanation: string;
+  explanation: {
+    summary: string;
+    whyPicked: string;
+    mainRisk: string;
+    confidence: "High" | "Medium" | "Low";
+    tags: string[];
+  };
   contributions: Contribution[];
 }
 
@@ -33,18 +39,14 @@ export interface RecommendationView {
   };
 }
 
-export interface TeamImportView {
-  status: "not_provided" | "success";
-  teamId: string | null;
-  sourceGameweek: number | null;
-  importedPlayerIds: number[];
-  importedPlayers: PlayerView[];
-}
-
 export interface RecommendData {
   nextGw: number;
   recommendation: RecommendationView;
-  teamImport: TeamImportView;
+  teams: Array<{
+    id: number;
+    shortName: string;
+    name: string;
+  }>;
 }
 
 export interface RecommendResponse {
