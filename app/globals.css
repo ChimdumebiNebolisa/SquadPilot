@@ -1,13 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #080b12;
-  --foreground: #eef3ff;
-  --panel: #101726;
-  --border: #263047;
-  --muted: #9aa8c7;
-  --brand: #4f7cff;
-  --brand-foreground: #f8fbff;
+  --background: #090d14;
+  --foreground: #edf2fb;
+  --panel: #121827;
+  --panel-elevated: #171f31;
+  --border: #2a3348;
+  --muted: #98a4bc;
+  --brand: #3aa275;
+  --brand-foreground: #f4fff9;
+  --good: #3cc587;
+  --neutral: #8ba1a9;
+  --tough: #c88b45;
+  --captain: #f5cf59;
+  --vice: #75c8ff;
   --card-radius: 16px;
 }
 
@@ -15,10 +21,16 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-panel: var(--panel);
+  --color-panel-elevated: var(--panel-elevated);
   --color-border: var(--border);
   --color-muted: var(--muted);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-good: var(--good);
+  --color-neutral: var(--neutral);
+  --color-tough: var(--tough);
+  --color-captain: var(--captain);
+  --color-vice: var(--vice);
   --radius-card: var(--card-radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -28,4 +40,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  background-image: radial-gradient(1200px 700px at 50% -20%, rgba(58, 162, 117, 0.09), transparent 58%);
+}
+
+.football-grid {
+  background-image:
+    linear-gradient(rgba(152, 164, 188, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(152, 164, 188, 0.06) 1px, transparent 1px);
+  background-size: 34px 34px;
 }
