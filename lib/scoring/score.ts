@@ -37,7 +37,10 @@ export function scorePlayers(
         projectedScore,
         projectedPoints: Number((projectedScore * 10).toFixed(2)),
         contributions,
-        explanation: buildPlayerExplanation(contributions),
+        explanation: buildPlayerExplanation({
+          position: player.position,
+          contributions,
+        }),
       };
     })
     .sort((a, b) => b.projectedScore - a.projectedScore);
