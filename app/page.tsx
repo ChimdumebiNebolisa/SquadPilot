@@ -104,31 +104,31 @@ export default function Home() {
 
         {uiState === "success" && recommendation && (
           <>
-            <section className="premium-panel rounded-card border border-border/75 px-3 py-2 md:px-4 md:py-3">
+            <section className="premium-panel-elevated rounded-card border border-border/70 px-3 py-2.5 md:px-4 md:py-3.5">
               <div className="grid gap-2 md:grid-cols-6">
-                <article className="premium-panel-elevated rounded-lg px-3 py-2.5 md:px-2 md:py-1.5">
+                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">GW</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{response?.data.nextGw}</p>
+                  <p className="mt-1 text-xl font-semibold text-white">{response?.data.nextGw}</p>
                 </article>
-                <article className="premium-panel-elevated rounded-lg px-3 py-2.5 md:px-2 md:py-1.5">
+                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Budget</p>
-                  <p className="mt-1 text-lg font-semibold text-white">£{recommendation.budgetUsed.toFixed(1)}m</p>
+                  <p className="mt-1 text-xl font-semibold text-white">£{recommendation.budgetUsed.toFixed(1)}m</p>
                 </article>
-                <article className="premium-panel-elevated rounded-lg px-3 py-2.5 md:px-2 md:py-1.5">
+                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Captain</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{recommendation.captain.webName}</p>
+                  <p className="mt-1 text-base font-semibold text-white">{recommendation.captain.webName}</p>
                 </article>
-                <article className="premium-panel-elevated rounded-lg px-3 py-2.5 md:px-2 md:py-1.5">
+                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Vice</p>
-                  <p className="mt-1 text-lg font-semibold text-white">{recommendation.viceCaptain.webName}</p>
+                  <p className="mt-1 text-base font-semibold text-white">{recommendation.viceCaptain.webName}</p>
                 </article>
-                <article className="premium-panel-elevated rounded-lg px-3 py-2.5 md:px-2 md:py-1.5">
+                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Captain 5+ Chance</p>
-                  <p className="mt-1 text-lg font-semibold text-brand">{recommendation.captain.chanceOfFivePlusPoints.toFixed(1)}%</p>
+                  <p className="mt-1 text-xl font-semibold text-brand">{recommendation.captain.chanceOfFivePlusPoints.toFixed(1)}%</p>
                 </article>
-                <article className="premium-panel-elevated rounded-lg px-3 py-2.5 md:px-2 md:py-1.5">
+                <article className="rounded-lg bg-background/35 px-3 py-2.5 md:px-2.5 md:py-2">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Solver</p>
-                  <p className="mt-1 text-lg font-semibold capitalize text-white">{recommendation.solver.mode}</p>
+                  <p className="mt-1 text-base font-semibold capitalize text-white">{recommendation.solver.mode}</p>
                 </article>
               </div>
             </section>
@@ -150,19 +150,19 @@ export default function Home() {
                   onSelect={setSelectedPlayer}
                 />
               </div>
-              <aside className="premium-panel-elevated rounded-card border border-border/80 p-4 md:p-5">
+              <aside className="premium-panel-elevated rounded-card border border-border/75 p-3.5 md:p-4">
                 <div className="flex items-center justify-between border-b border-border/60 pb-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.14em] text-muted">Intelligence Brief</p>
-                    <h3 className="mt-1 text-base font-semibold tracking-tight text-white">Player Insight</h3>
+                    <h3 className="mt-1 text-lg font-semibold tracking-tight text-white">Player Insight</h3>
                   </div>
                   {selectedPlayer && (
                     <span className="rounded-md bg-background/50 px-2 py-0.5 text-[11px] font-medium text-muted">{selectedPlayer.position}</span>
                   )}
                 </div>
                 {selectedPlayer ? (
-                  <div className="mt-4 space-y-3.5">
-                    <div className="premium-panel rounded-xl px-3.5 py-3">
+                  <div className="mt-3 space-y-2">
+                    <div className="premium-panel rounded-xl px-3.5 py-2.5">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-base font-semibold tracking-tight text-white">{selectedPlayer.webName}</p>
@@ -175,20 +175,23 @@ export default function Home() {
                           <p className="text-[10px] uppercase tracking-[0.1em] text-muted">Projected</p>
                         </div>
                       </div>
-                      <p className="mt-2 text-sm font-medium text-muted">Chance of 5+ pts: <span className="text-brand">{selectedPlayer.chanceOfFivePlusPoints.toFixed(1)}%</span></p>
+                      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                        <p className="rounded-md bg-background/50 px-2 py-1 text-[11px] font-medium text-muted">5+ chance <span className="text-brand">{selectedPlayer.chanceOfFivePlusPoints.toFixed(1)}%</span></p>
+                        <p className="rounded-md bg-background/50 px-2 py-1 text-[11px] font-medium text-muted">Confidence <span className="text-brand">{selectedPlayer.explanation.confidence}</span></p>
+                      </div>
                     </div>
 
-                    <div className="premium-panel rounded-xl px-3.5 py-3">
+                    <div className="premium-panel rounded-xl px-3.5 py-2">
                       <p className="text-[11px] uppercase tracking-[0.12em] text-muted">Profile</p>
                       <p className="mt-1 text-sm leading-relaxed text-foreground">{selectedPlayer.explanation.summary}</p>
                     </div>
 
-                    <div className="premium-panel rounded-xl px-3.5 py-3">
+                    <div className="premium-panel rounded-xl px-3.5 py-2">
                       <p className="text-[11px] uppercase tracking-[0.12em] text-muted">Why Selected</p>
                       <p className="mt-1 text-sm leading-relaxed text-foreground">{selectedPlayer.explanation.whyPicked}</p>
                     </div>
 
-                    <div className="premium-panel rounded-xl px-3.5 py-3">
+                    <div className="premium-panel rounded-xl px-3.5 py-2">
                       <p className="text-[11px] uppercase tracking-[0.12em] text-muted">Risk</p>
                       <p className="mt-1 text-sm leading-relaxed text-foreground">{selectedPlayer.explanation.mainRisk}</p>
                     </div>
@@ -201,8 +204,7 @@ export default function Home() {
                       ))}
                     </div>
 
-                    <p className="rounded-lg bg-background/55 px-3 py-2 text-sm font-medium text-brand">Confidence: {selectedPlayer.explanation.confidence}</p>
-                    <p className="text-xs text-muted">Select another player card below to switch context.</p>
+                    <p className="text-[11px] text-muted">Select another player to compare context.</p>
                   </div>
                 ) : (
                   <p className="mt-3 text-sm text-muted">Pick a player card to view match-context reasoning and risk.</p>

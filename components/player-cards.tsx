@@ -54,9 +54,9 @@ export function PlayerCards({ players, captainId, viceId, selectedPlayerId, team
         <p className="text-xs text-muted">Ranked by projected points</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3.5">
         {groups.map((group) => (
-          <div key={group.position} className="space-y-2.5">
+          <div key={group.position} className="space-y-2">
             <div className="flex items-center justify-between border-b border-border/60 pb-1.5">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{group.position}</p>
               <p className="text-[11px] text-muted">{group.players.length} players</p>
@@ -74,10 +74,12 @@ export function PlayerCards({ players, captainId, viceId, selectedPlayerId, team
                     className={`w-full rounded-xl px-3.5 py-3 text-left transition focus-visible:outline-none ${
                       selectedPlayerId === player.id
                         ? "premium-panel-elevated ring-1 ring-brand/70 shadow-[0_0_0_1px_rgba(58,162,117,0.35),0_16px_32px_rgba(5,10,20,0.38)]"
-                        : "premium-panel shadow-[0_0_0_1px_rgba(39,50,71,0.82),0_10px_28px_rgba(5,10,20,0.26)] hover:shadow-[0_0_0_1px_rgba(66,81,105,0.95),0_14px_30px_rgba(5,10,20,0.32)]"
+                        : index < 2
+                          ? "premium-panel-elevated shadow-[0_0_0_1px_rgba(52,66,90,0.84),0_10px_26px_rgba(5,10,20,0.28)] hover:shadow-[0_0_0_1px_rgba(70,86,110,0.94),0_13px_30px_rgba(5,10,20,0.34)]"
+                          : "premium-panel shadow-[0_0_0_1px_rgba(39,50,71,0.78),0_9px_24px_rgba(5,10,20,0.24)] hover:shadow-[0_0_0_1px_rgba(66,81,105,0.9),0_12px_28px_rgba(5,10,20,0.3)]"
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className="rounded-md bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted">#{index + 1}</span>
@@ -85,24 +87,25 @@ export function PlayerCards({ players, captainId, viceId, selectedPlayerId, team
                           {player.id === captainId && <span className="rounded-md bg-captain/15 px-1.5 py-0.5 text-[10px] font-semibold text-captain">C</span>}
                           {player.id === viceId && <span className="rounded-md bg-vice/15 px-1.5 py-0.5 text-[10px] font-semibold text-vice">VC</span>}
                         </div>
-                        <p className="mt-1 text-[10px] uppercase tracking-[0.1em] text-muted">
-                          {club} · {player.position} · £{player.price.toFixed(1)}m
+                        <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted">
+                          {club} · {player.position}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-semibold leading-none text-brand">{player.projectedPoints.toFixed(1)}</p>
-                        <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted">Projected</p>
-                        <p className="mt-1 text-[10px] font-medium text-muted">5+ {player.chanceOfFivePlusPoints.toFixed(1)}%</p>
+                        <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted">pts</p>
                       </div>
                     </div>
 
-                    <div className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
-                      <span className="rounded-md bg-background/45 px-2 py-1 text-center text-muted">Min {minutesSignal(player)}</span>
-                      <span className="rounded-md bg-background/45 px-2 py-1 text-center text-muted">Fix {fixtureSignal(player)}</span>
-                      <span className="rounded-md bg-background/45 px-2 py-1 text-center text-muted">Health {healthLabel(player)}</span>
+                    <div className="mt-2 grid grid-cols-5 gap-1 text-[10px] text-muted">
+                      <span className="rounded-md bg-background/45 px-1.5 py-1 text-center">£{player.price.toFixed(1)}m</span>
+                      <span className="rounded-md bg-background/45 px-1.5 py-1 text-center">5+ {player.chanceOfFivePlusPoints.toFixed(1)}%</span>
+                      <span className="rounded-md bg-background/45 px-1.5 py-1 text-center">Min {minutesSignal(player)}</span>
+                      <span className="rounded-md bg-background/45 px-1.5 py-1 text-center">Fix {fixtureSignal(player)}</span>
+                      <span className="rounded-md bg-background/45 px-1.5 py-1 text-center">{healthLabel(player)}</span>
                     </div>
 
-                    <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted">{player.explanation.summary}</p>
+                    <p className="mt-2 line-clamp-2 min-h-9 text-xs leading-relaxed text-muted">{player.explanation.summary}</p>
                   </button>
                 );
               })}

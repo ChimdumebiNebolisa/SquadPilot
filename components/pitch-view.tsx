@@ -49,9 +49,9 @@ function PlayerChip({
     <button
       type="button"
       onClick={() => onSelect(player)}
-      className={`relative w-full rounded-xl px-3 py-3 text-left transition focus-visible:outline-none ${
+      className={`relative w-full rounded-xl px-3 py-2.5 text-left transition focus-visible:outline-none ${
         isSelected
-          ? "premium-panel-elevated ring-1 ring-brand/70 shadow-[0_0_0_1px_rgba(58,162,117,0.35),0_18px_36px_rgba(3,10,20,0.42)]"
+          ? "premium-panel-elevated ring-2 ring-brand/75 shadow-[0_0_0_1px_rgba(58,162,117,0.52),0_24px_44px_rgba(3,10,20,0.56)]"
           : isCaptain
             ? "premium-panel shadow-[0_0_0_1px_rgba(245,207,89,0.38),0_10px_30px_rgba(5,10,20,0.28)]"
             : isVice
@@ -59,21 +59,20 @@ function PlayerChip({
               : "premium-panel shadow-[0_0_0_1px_rgba(39,50,71,0.8),0_10px_30px_rgba(5,10,20,0.26)] hover:shadow-[0_0_0_1px_rgba(66,81,105,0.95),0_14px_34px_rgba(5,10,20,0.32)]"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-1.5">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-tight text-white">{player.webName}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-[0.12em] text-muted">
+          <p className="line-clamp-2 text-[14px] font-semibold leading-tight text-white">{player.webName}</p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-[0.09em] text-muted">
             {club} · {player.position}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xl font-semibold leading-none text-brand">{player.projectedPoints.toFixed(1)}</p>
-          <p className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-muted">pts</p>
+          <p className="text-[26px] font-semibold leading-none text-brand">{player.projectedPoints.toFixed(1)}</p>
+          <p className="mt-0.5 text-[10px] uppercase tracking-[0.08em] text-muted">Projected Pts</p>
         </div>
       </div>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-medium text-muted">5+ {player.chanceOfFivePlusPoints.toFixed(1)}%</p>
+      <div className="mt-1.5 flex items-center justify-end gap-2">
         {badge ? (
           <span
             className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.08em] ${
@@ -91,10 +90,10 @@ function PlayerChip({
 export function PitchView({ startingXI, captainId, viceId, teamShortNames, selectedPlayerId, onSelect }: PitchViewProps) {
   const grouped = groupByPosition(startingXI);
   const lines = [
-    { key: "GK", players: grouped.GK, maxWidth: "max-w-[240px]", gap: "mb-10" },
-    { key: "DEF", players: grouped.DEF, maxWidth: "max-w-[880px]", gap: "mb-11" },
-    { key: "MID", players: grouped.MID, maxWidth: "max-w-[940px]", gap: "mb-11" },
-    { key: "FWD", players: grouped.FWD, maxWidth: "max-w-[760px]", gap: "mb-0" },
+    { key: "GK", players: grouped.GK, maxWidth: "max-w-[320px]", gap: "mb-6" },
+    { key: "DEF", players: grouped.DEF, maxWidth: "max-w-[940px]", gap: "mb-6" },
+    { key: "MID", players: grouped.MID, maxWidth: "max-w-[1000px]", gap: "mb-6" },
+    { key: "FWD", players: grouped.FWD, maxWidth: "max-w-[810px]", gap: "mb-0" },
   ] as const;
 
   return (
@@ -106,9 +105,10 @@ export function PitchView({ startingXI, captainId, viceId, teamShortNames, selec
         </div>
         <p className="text-xs text-muted">Formation-first board</p>
       </div>
-      <div className="pitch-surface mt-5 rounded-2xl border border-border/70 p-5 md:p-6">
-        <div className="pointer-events-none absolute left-1/2 top-[18%] h-14 w-14 -translate-x-1/2 rounded-full border border-border/35" />
+      <div className="pitch-surface mt-3.5 rounded-2xl border border-border/60 p-3.5 md:p-4">
+        <div className="pointer-events-none absolute left-1/2 top-[18%] h-16 w-16 -translate-x-1/2 rounded-full border border-border/40" />
         <div className="pointer-events-none absolute left-6 right-6 top-1/2 h-px bg-border/40" />
+        <div className="pointer-events-none absolute bottom-[16%] left-1/2 h-16 w-24 -translate-x-1/2 rounded-t-full border border-b-0 border-border/25" />
         {lines.map((line, index) => (
           <div
             key={line.key}
