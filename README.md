@@ -47,8 +47,9 @@ http://localhost:3000
 
 - `app/page.tsx` - dashboard input + results flow
 - `app/api/recommend/route.ts` - orchestration route for fetch, scoring, solving, and response shaping
-- `components/` - pitch, bench, and player card presentation
+- `components/` - pitch, bench, player card, and explanation presentation
 - `lib/fpl/` - FPL fetchers, normalization, Team ID import handling
+- `lib/recommendation/` - shared API response/view types for UI rendering
 - `lib/scoring/` - fixed-weight feature scoring and explanation generation
 - `lib/solver/` - MILP recommendation model + fallback heuristic
 - `lib/server/rate-limit.ts` - basic inbound route throttling
@@ -67,6 +68,7 @@ http://localhost:3000
 - Upstream 429 responses use exponential backoff and return clear retry states.
 - Route applies basic per-client inbound throttling and returns `RATE_LIMITED` on 429.
 - Team ID is transient request input and not persisted to storage.
+- Team ID import depends on public picks availability and fails cleanly when picks are unavailable.
 
 ## Key Technical Decisions
 
