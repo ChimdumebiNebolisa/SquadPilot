@@ -8,6 +8,8 @@ import {
   resolveNextGameweek,
 } from "@/lib/fpl/normalize";
 import type { TeamImportResult } from "@/lib/fpl/types";
+import { scorePlayers } from "@/lib/scoring/score";
+import { V1_FIXED_WEIGHTS } from "@/lib/scoring/weights";
 
 const TEAM_ID_PATTERN = /^\d{1,10}$/;
 
@@ -39,6 +41,7 @@ export async function POST(request: Request) {
 
     const { players, teams } = normalizeBootstrap(bootstrapRaw);
     const fixtures = normalizeFixtures(fixturesRaw);
+    const projectedPlayers = scorePlayers(players, teams, fixtures, V1_FIXED_WEIGHTS);
 
     let teamImport: TeamImportResult = {
       status: "not_provided",
@@ -93,6 +96,10 @@ export async function POST(request: Request) {
       data: {
         nextGw,
         players,
+        projectedPlayers,
+        scoring: {
+          weightsVersion: V1_FIXED_WEIGHTS.version,
+        },
         teams,
         fixtures,
         teamImport,

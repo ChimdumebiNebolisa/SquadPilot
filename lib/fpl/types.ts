@@ -8,6 +8,7 @@ export interface NormalizedPlayer {
   price: number;
   form: number;
   pointsPerGame: number;
+  selectedByPercent: number;
   status: string;
   chanceOfPlayingNextRound: number | null;
 }

@@ -112,6 +112,7 @@ export function normalizeBootstrap(
         price: toNumber(player.now_cost, 0) / 10,
         form: toNumber(player.form, 0),
         pointsPerGame: toNumber(player.points_per_game, 0),
+        selectedByPercent: toNumber(player.selected_by_percent, 0),
         status: toStringValue(player.status, "u"),
         chanceOfPlayingNextRound: toNullableNumber(player.chance_of_playing_next_round),
       };
