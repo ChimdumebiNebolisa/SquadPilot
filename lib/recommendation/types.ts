@@ -14,6 +14,7 @@ export interface PlayerView {
   position: Position;
   price: number;
   projectedPoints: number;
+  chanceOfFivePlusPoints: number;
   chanceOfPlayingNextRound: number | null;
   status: string;
   explanation: {

@@ -1,6 +1,7 @@
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam } from "@/lib/fpl/types";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
+import { chanceOfFivePlusPoints } from "@/lib/scoring/probability";
 import type { FactorContribution, PlayerFeatureVector, ProjectedPlayer, ScoringWeights } from "@/lib/scoring/types";
 
 function toContributions(features: PlayerFeatureVector, weights: ScoringWeights): FactorContribution[] {
@@ -31,11 +32,14 @@ export function scorePlayers(
       const features = extractFeaturesForPlayer(player, teams, fixtures);
       const contributions = toContributions(features, weights);
       const projectedScore = contributions.reduce((sum, entry) => sum + entry.contribution, 0);
+      const projectedPoints = Number((projectedScore * 10).toFixed(2));
+      const chance = chanceOfFivePlusPoints(player.position, projectedPoints, features);
 
       return {
         ...player,
         projectedScore,
-        projectedPoints: Number((projectedScore * 10).toFixed(2)),
+        projectedPoints,
+        chanceOfFivePlusPoints: chance,
         contributions,
         explanation: buildPlayerExplanation({
           position: player.position,

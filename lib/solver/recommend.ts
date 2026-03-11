@@ -5,6 +5,10 @@ import type { RecommendationResult } from "@/lib/solver/types";
 
 const BUDGET_CAP = 100;
 
+function objectiveValue(player: ProjectedPlayer): number {
+  return player.projectedScore + (player.chanceOfFivePlusPoints / 100) * 0.3;
+}
+
 function normalizeInsightText(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -114,7 +118,7 @@ function createMilpRecommendation(players: ProjectedPlayer[]): RecommendationRes
     const captainVar = `c_${player.id}`;
 
     variables[squadVar] = {
-      objective: player.projectedScore * 0.35,
+      objective: objectiveValue(player) * 0.35,
       squadCount: 1,
       budget: player.price,
       [`club_${player.teamId}`]: 1,
@@ -126,7 +130,7 @@ function createMilpRecommendation(players: ProjectedPlayer[]): RecommendationRes
     };
 
     variables[xiVar] = {
-      objective: player.projectedScore * 0.65,
+      objective: objectiveValue(player) * 0.65,
       xiCount: 1,
       xiGK: isPosition(player, "GK") ? 1 : 0,
       xiDEFMin: isPosition(player, "DEF") ? 1 : 0,
@@ -140,7 +144,7 @@ function createMilpRecommendation(players: ProjectedPlayer[]): RecommendationRes
     };
 
     variables[captainVar] = {
-      objective: player.projectedScore,
+      objective: objectiveValue(player),
       captainCount: 1,
       [`link_captain_${player.id}`]: 1,
     };

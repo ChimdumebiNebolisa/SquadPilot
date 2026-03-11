@@ -62,6 +62,7 @@ function PlayerChip({
         {club} · {player.position}
       </p>
       <p className="mt-1 text-xs font-medium text-brand">{player.projectedPoints.toFixed(1)} pts</p>
+      <p className="text-[10px] text-muted">5+ {player.chanceOfFivePlusPoints.toFixed(1)}%</p>
     </button>
   );
 }

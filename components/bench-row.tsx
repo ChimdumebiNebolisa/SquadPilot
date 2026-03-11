@@ -34,6 +34,7 @@ export function BenchRow({ bench, teamShortNames, selectedPlayerId, onSelect }: 
             <p className="mt-1 text-[11px] font-medium text-brand">
               {player.projectedPoints.toFixed(1)} pts
             </p>
+            <p className="text-[10px] text-muted">5+ {player.chanceOfFivePlusPoints.toFixed(1)}%</p>
           </button>
         ))}
       </div>

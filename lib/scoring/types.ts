@@ -47,6 +47,7 @@ export interface PlayerExplanation {
 export interface ProjectedPlayer extends NormalizedPlayer {
   projectedScore: number;
   projectedPoints: number;
+  chanceOfFivePlusPoints: number;
   contributions: FactorContribution[];
   explanation: PlayerExplanation;
 }

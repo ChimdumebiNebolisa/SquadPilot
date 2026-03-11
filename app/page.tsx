@@ -105,7 +105,7 @@ export default function Home() {
         {uiState === "success" && recommendation && (
           <>
             <section className="rounded-card border border-border bg-panel px-3 py-2 md:px-4 md:py-3">
-              <div className="grid gap-2 md:grid-cols-5">
+              <div className="grid gap-2 md:grid-cols-6">
                 <article className="rounded-lg border border-border/80 bg-panel-elevated px-3 py-2.5 md:border-none md:bg-transparent md:px-2 md:py-1.5">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">GW</p>
                   <p className="mt-1 text-lg font-semibold text-white">{response?.data.nextGw}</p>
@@ -121,6 +121,10 @@ export default function Home() {
                 <article className="rounded-lg border border-border/80 bg-panel-elevated px-3 py-2.5 md:border-none md:bg-transparent md:px-2 md:py-1.5 md:border-l md:border-border/70">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Vice</p>
                   <p className="mt-1 text-lg font-semibold text-white">{recommendation.viceCaptain.webName}</p>
+                </article>
+                <article className="rounded-lg border border-border/80 bg-panel-elevated px-3 py-2.5 md:border-none md:bg-transparent md:px-2 md:py-1.5 md:border-l md:border-border/70">
+                  <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Captain 5+ Chance</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{recommendation.captain.chanceOfFivePlusPoints.toFixed(1)}%</p>
                 </article>
                 <article className="rounded-lg border border-border/80 bg-panel-elevated px-3 py-2.5 md:border-none md:bg-transparent md:px-2 md:py-1.5 md:border-l md:border-border/70">
                   <p className="text-[10px] uppercase tracking-[0.12em] text-muted">Solver</p>
@@ -163,6 +167,7 @@ export default function Home() {
                       <p className="mt-1 text-xs uppercase tracking-[0.08em] text-muted">
                         {teamShortNames[selectedPlayer.teamId] ?? `T${selectedPlayer.teamId}`} · {selectedPlayer.position}
                       </p>
+                      <p className="mt-1 text-xs font-medium text-muted">Chance of 5+ pts: {selectedPlayer.chanceOfFivePlusPoints.toFixed(1)}%</p>
                     </div>
 
                     <div className="space-y-2.5 text-sm leading-relaxed text-foreground">

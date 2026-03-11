@@ -68,6 +68,7 @@ export function PlayerCards({ players, captainId, viceId, selectedPlayerId, team
               <div className="text-right">
                 <p className="text-lg font-semibold leading-none text-brand">{player.projectedPoints.toFixed(1)}</p>
                 <p className="text-[10px] uppercase tracking-[0.08em] text-muted">pts</p>
+                <p className="mt-0.5 text-[10px] font-medium text-muted">5+ {player.chanceOfFivePlusPoints.toFixed(1)}%</p>
               </div>
             </div>
 
