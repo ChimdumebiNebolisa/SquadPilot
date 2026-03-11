@@ -136,8 +136,15 @@ export default function Home() {
                   captainId={recommendation.captain.id}
                   viceId={recommendation.viceCaptain.id}
                   teamShortNames={teamShortNames}
+                  selectedPlayerId={selectedPlayer?.id ?? null}
+                  onSelect={setSelectedPlayer}
                 />
-                <BenchRow bench={recommendation.bench} teamShortNames={teamShortNames} />
+                <BenchRow
+                  bench={recommendation.bench}
+                  teamShortNames={teamShortNames}
+                  selectedPlayerId={selectedPlayer?.id ?? null}
+                  onSelect={setSelectedPlayer}
+                />
               </div>
               <aside className="rounded-card border border-border bg-panel-elevated p-4">
                 <div className="flex items-center justify-between border-b border-border/70 pb-3">

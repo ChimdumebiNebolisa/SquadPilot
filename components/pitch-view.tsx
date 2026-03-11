@@ -5,6 +5,8 @@ interface PitchViewProps {
   captainId: number;
   viceId: number;
   teamShortNames: Record<number, string>;
+  selectedPlayerId: number | null;
+  onSelect: (player: PlayerView) => void;
 }
 
 function groupByPosition(players: PlayerView[]) {
@@ -21,24 +23,34 @@ function PlayerChip({
   captainId,
   viceId,
   teamShortNames,
+  selectedPlayerId,
+  onSelect,
 }: {
   player: PlayerView;
   captainId: number;
   viceId: number;
   teamShortNames: Record<number, string>;
+  selectedPlayerId: number | null;
+  onSelect: (player: PlayerView) => void;
 }) {
   const isCaptain = player.id === captainId;
   const isVice = player.id === viceId;
+  const isSelected = player.id === selectedPlayerId;
   const club = teamShortNames[player.teamId] ?? `T${player.teamId}`;
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => onSelect(player)}
       className={`relative rounded-lg border px-3 py-2.5 text-center transition ${
+        isSelected
+          ? "border-brand/80 bg-panel-elevated"
+          :
         isCaptain
           ? "border-captain/80 bg-captain/8"
           : isVice
             ? "border-vice/80 bg-vice/8"
-            : "border-border bg-panel"
+            : "border-border bg-panel hover:border-border/80 hover:bg-panel-elevated"
       }`}
     >
       <div className="absolute right-2 top-2 flex gap-1">
@@ -50,11 +62,11 @@ function PlayerChip({
         {club} · {player.position}
       </p>
       <p className="mt-1 text-xs font-medium text-brand">{player.projectedPoints.toFixed(1)} pts</p>
-    </div>
+    </button>
   );
 }
 
-export function PitchView({ startingXI, captainId, viceId, teamShortNames }: PitchViewProps) {
+export function PitchView({ startingXI, captainId, viceId, teamShortNames, selectedPlayerId, onSelect }: PitchViewProps) {
   const grouped = groupByPosition(startingXI);
 
   return (
@@ -77,6 +89,8 @@ export function PitchView({ startingXI, captainId, viceId, teamShortNames }: Pit
                 captainId={captainId}
                 viceId={viceId}
                 teamShortNames={teamShortNames}
+                selectedPlayerId={selectedPlayerId}
+                onSelect={onSelect}
               />
             ))}
           </div>
