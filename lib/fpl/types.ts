@@ -28,19 +28,3 @@ export interface NormalizedFixture {
   teamHDifficulty: number | null;
   teamADifficulty: number | null;
 }
-
-export interface TeamImportResult {
-  status: "not_provided" | "success";
-  teamId: string | null;
-  sourceGameweek: number | null;
-  importedPlayerIds: number[];
-  importedPlayers: NormalizedPlayer[];
-}
-
-export interface NormalizedRecommendationData {
-  nextGw: number;
-  players: NormalizedPlayer[];
-  teams: NormalizedTeam[];
-  fixtures: NormalizedFixture[];
-  teamImport: TeamImportResult;
-}

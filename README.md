@@ -6,8 +6,8 @@ Portfolio-oriented web app that recommends one projected Fantasy Premier League 
 
 - MVP build path is implemented through Milestone 6.
 - App generates a legal recommended 15-man squad, starting XI, captain, vice-captain, and bench order.
-- Optional Team ID import is supported with clean valid/invalid states.
-- Results dashboard includes pitch, bench, cards, explanation panel, and import comparison.
+- One-click generation flow is shipped (no Team ID input/import).
+- Results dashboard includes pitch, bench, dense squad cards, and structured player insight panel.
 
 ## Stack
 
@@ -48,7 +48,7 @@ http://localhost:3000
 - `app/page.tsx` - dashboard input + results flow
 - `app/api/recommend/route.ts` - orchestration route for fetch, scoring, solving, and response shaping
 - `components/` - pitch, bench, player card, and explanation presentation
-- `lib/fpl/` - FPL fetchers, normalization, Team ID import handling
+- `lib/fpl/` - FPL fetchers and normalization for next-gameweek data
 - `lib/recommendation/` - shared API response/view types for UI rendering
 - `lib/scoring/` - fixed-weight feature scoring and explanation generation
 - `lib/solver/` - MILP recommendation model + fallback heuristic
@@ -67,8 +67,7 @@ http://localhost:3000
 - Recommendation route uses server-side FPL fetch only (no browser direct FPL calls).
 - Upstream 429 responses use exponential backoff and return clear retry states.
 - Route applies basic per-client inbound throttling and returns `RATE_LIMITED` on 429.
-- Team ID is transient request input and not persisted to storage.
-- Team ID import depends on public picks availability and fails cleanly when picks are unavailable.
+- The app is intentionally a one-click recommendation flow without Team ID handling.
 
 ## Key Technical Decisions
 

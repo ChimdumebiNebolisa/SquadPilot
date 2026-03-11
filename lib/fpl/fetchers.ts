@@ -1,7 +1,6 @@
 const FPL_BASE_URL = "https://fantasy.premierleague.com/api";
 const BOOTSTRAP_TTL_MS = 1000 * 60 * 15;
 const FIXTURES_TTL_MS = 1000 * 60 * 5;
-const PICKS_TTL_MS = 1000 * 30;
 const MAX_RETRIES = 3;
 
 interface CacheEntry {
@@ -96,17 +95,5 @@ export async function fetchFixturesForEvent(eventId: number): Promise<unknown> {
 
   const value = await fetchFplJson<unknown>(`/fixtures/?event=${eventId}`);
   setCached(cacheKey, value, FIXTURES_TTL_MS);
-  return value;
-}
-
-export async function fetchEntryPicks(teamId: string, gameweek: number): Promise<unknown> {
-  const cacheKey = `picks-${teamId}-${gameweek}`;
-  const cached = getCached<unknown>(cacheKey);
-  if (cached) {
-    return cached;
-  }
-
-  const value = await fetchFplJson<unknown>(`/entry/${teamId}/event/${gameweek}/picks/`);
-  setCached(cacheKey, value, PICKS_TTL_MS);
   return value;
 }
