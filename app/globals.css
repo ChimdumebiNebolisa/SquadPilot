@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+:root {
+  --background: #080b12;
+  --foreground: #eef3ff;
+  --panel: #101726;
+  --border: #263047;
+  --muted: #9aa8c7;
+  --brand: #4f7cff;
+  --brand-foreground: #f8fbff;
+  --card-radius: 16px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-panel: var(--panel);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --radius-card: var(--card-radius);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
