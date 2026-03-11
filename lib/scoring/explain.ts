@@ -5,8 +5,54 @@ interface ExplanationInput {
   contributions: FactorContribution[];
 }
 
+type NarrativeMode = "upside-first" | "consistency-first" | "fixture-first" | "value-first";
+
 function getContribution(contributions: FactorContribution[], factor: string): number {
   return contributions.find((item) => item.factor === factor)?.value ?? 0;
+}
+
+function factorLabel(factor: FactorContribution["factor"]): string {
+  if (factor === "recentForm") return "recent form";
+  if (factor === "pointsPerGame") return "points baseline";
+  if (factor === "expectedMinutes") return "minutes security";
+  if (factor === "fixtureDifficulty") return "fixture setup";
+  if (factor === "homeAway") return "venue context";
+  if (factor === "opponentStrength") return "opponent profile";
+  if (factor === "value") return "price efficiency";
+  if (factor === "differential") return "differential edge";
+  if (factor === "health") return "availability";
+  if (factor === "setPiece") return "set-piece role";
+  return "historical matchup";
+}
+
+function stableHash(input: string): number {
+  let hash = 2166136261;
+
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+  }
+
+  return Math.abs(hash >>> 0);
+}
+
+function contributionSeed(contributions: FactorContribution[]): number {
+  const fingerprint = [...contributions]
+    .sort((left, right) => left.factor.localeCompare(right.factor))
+    .map((item) => `${item.factor}:${Math.round(item.value * 100)}:${Math.round(item.contribution * 100)}`)
+    .join("|");
+
+  return stableHash(fingerprint);
+}
+
+function topContributors(contributions: FactorContribution[], direction: "positive" | "negative", count: number): FactorContribution[] {
+  const sorted = [...contributions].sort((left, right) => right.contribution - left.contribution);
+
+  if (direction === "negative") {
+    return sorted.reverse().slice(0, count);
+  }
+
+  return sorted.slice(0, count);
 }
 
 function minutesLabel(expectedMinutes: number): "Strong" | "Likely" | "Unclear" {
@@ -40,6 +86,17 @@ function pickVariant(options: string[], seed: number): string {
   return options[Math.abs(seed) % options.length] ?? options[0] ?? "";
 }
 
+function pickMode(position: ExplanationInput["position"], seed: number): NarrativeMode {
+  const modesByPosition: Record<ExplanationInput["position"], NarrativeMode[]> = {
+    GK: ["consistency-first", "fixture-first", "value-first", "upside-first"],
+    DEF: ["fixture-first", "consistency-first", "value-first", "upside-first"],
+    MID: ["upside-first", "consistency-first", "fixture-first", "value-first"],
+    FWD: ["upside-first", "fixture-first", "consistency-first", "value-first"],
+  };
+
+  return pickVariant(modesByPosition[position], seed) as NarrativeMode;
+}
+
 function summaryByRole(
   position: ExplanationInput["position"],
   value: number,
@@ -47,7 +104,41 @@ function summaryByRole(
   minutes: number,
   fixture: "Good" | "Neutral" | "Tough",
   seed: number,
+  mode: NarrativeMode,
+  leadFactor: FactorContribution["factor"],
 ): string {
+  const leadLabel = factorLabel(leadFactor);
+
+  if (mode === "upside-first") {
+    return pickVariant(
+      [
+        `${position} profile leans on upside through ${leadLabel} and attacking projection.`,
+        `${position} pick is ceiling-oriented, with ${leadLabel} driving the edge this week.`,
+      ],
+      seed,
+    );
+  }
+
+  if (mode === "fixture-first") {
+    return pickVariant(
+      [
+        `${position} slot is optimized for matchup context, with ${leadLabel} reinforcing the call.`,
+        `${position} selection is matchup-led and supported by ${leadLabel}.`,
+      ],
+      seed,
+    );
+  }
+
+  if (mode === "value-first") {
+    return pickVariant(
+      [
+        `${position} inclusion prioritizes price efficiency while retaining projection stability.`,
+        `${position} choice is value-led, balancing spend with reliable output signals.`,
+      ],
+      seed,
+    );
+  }
+
   if (position === "GK") {
     if (value >= 0.7) {
       return pickVariant(
@@ -127,7 +218,22 @@ function whyPickedText(
   minutes: "Strong" | "Likely" | "Unclear",
   value: number,
   seed: number,
+  primaryFactor: FactorContribution["factor"],
+  secondaryFactor: FactorContribution["factor"],
 ): string {
+  const primaryLabel = factorLabel(primaryFactor);
+  const secondaryLabel = factorLabel(secondaryFactor);
+
+  if (position === "MID" || position === "FWD") {
+    return pickVariant(
+      [
+        `Picked because ${primaryLabel} and ${secondaryLabel} combine for one of the stronger attacking profiles in this pool.`,
+        `Picked for attacking slots where ${primaryLabel} and ${secondaryLabel} both clear the selection bar.`,
+      ],
+      seed,
+    );
+  }
+
   if (fixture === "Good" && minutes === "Strong") {
     return pickVariant(
       [
@@ -148,10 +254,6 @@ function whyPickedText(
     );
   }
 
-  if (position === "FWD") {
-    return "Picked as the best projected fit for the attacking slots under current constraints.";
-  }
-
   if (minutes === "Likely") {
     return "Picked more for floor and role stability than pure upside chasing.";
   }
@@ -164,7 +266,10 @@ function riskText(
   minutes: "Strong" | "Likely" | "Unclear",
   health: "Available" | "Doubtful",
   seed: number,
+  downsideFactor: FactorContribution["factor"],
 ): string {
+  const downsideLabel = factorLabel(downsideFactor);
+
   if (health === "Doubtful") {
     return pickVariant(
       [
@@ -189,10 +294,16 @@ function riskText(
     );
   }
 
-  return "Risk: profile is stable, but this is more of a floor play than a ceiling play.";
+  return pickVariant(
+    [
+      `Risk: ${downsideLabel} is the weakest signal and could cap upside versus alternatives.`,
+      "Risk: profile is stable, but this reads more as floor security than pure ceiling chasing.",
+    ],
+    seed,
+  );
 }
 
-export function buildPlayerExplanation({ position, contributions }: ExplanationInput): PlayerExplanation {
+export function buildPlayerExplanation({ position, contributions }: ExplanationInput, variationOffset = 0): PlayerExplanation {
   const recentForm = getContribution(contributions, "recentForm");
   const expectedMinutes = getContribution(contributions, "expectedMinutes");
   const fixtureDifficulty = getContribution(contributions, "fixtureDifficulty");
@@ -203,13 +314,20 @@ export function buildPlayerExplanation({ position, contributions }: ExplanationI
   const fixture = fixtureLabel(fixtureDifficulty);
   const healthStatus = healthLabel(health);
   const confidence = confidenceLabel(expectedMinutes, health, fixtureDifficulty, recentForm);
-  const seed = seedFromFactors(expectedMinutes, fixtureDifficulty, value, recentForm);
+  const profileSeed = contributionSeed(contributions);
+  const seed = seedFromFactors(expectedMinutes, fixtureDifficulty, value, recentForm) + profileSeed + variationOffset * 17;
+  const mode = pickMode(position, seed + 5);
+  const positives = topContributors(contributions, "positive", 2);
+  const negatives = topContributors(contributions, "negative", 1);
+  const leadPositive = positives[0]?.factor ?? "recentForm";
+  const secondPositive = positives[1]?.factor ?? "expectedMinutes";
+  const leadNegative = negatives[0]?.factor ?? "fixtureDifficulty";
 
   return {
-    summary: summaryByRole(position, value, recentForm, expectedMinutes, fixture, seed),
-    whyPicked: whyPickedText(position, fixture, minutes, value, seed + 3),
-    mainRisk: riskText(fixture, minutes, healthStatus, seed + 7),
+    summary: summaryByRole(position, value, recentForm, expectedMinutes, fixture, seed, mode, leadPositive),
+    whyPicked: whyPickedText(position, fixture, minutes, value, seed + 3, leadPositive, secondPositive),
+    mainRisk: riskText(fixture, minutes, healthStatus, seed + 7, leadNegative),
     confidence,
-    tags: [`Fixture: ${fixture}`, `Minutes: ${minutes}`, `Health: ${healthStatus}`],
+    tags: [`Fixture: ${fixture}`, `Minutes: ${minutes}`, `Health: ${healthStatus}`, `Mode: ${mode}`],
   };
 }

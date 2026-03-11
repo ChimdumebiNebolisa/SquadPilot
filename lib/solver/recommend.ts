@@ -1,8 +1,50 @@
 import solver from "javascript-lp-solver";
+import { buildPlayerExplanation } from "@/lib/scoring/explain";
 import type { ProjectedPlayer } from "@/lib/scoring/types";
 import type { RecommendationResult } from "@/lib/solver/types";
 
 const BUDGET_CAP = 100;
+
+function normalizeInsightText(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function insightKey(player: ProjectedPlayer): string {
+  return `${normalizeInsightText(player.explanation.summary)}|${normalizeInsightText(player.explanation.whyPicked)}`;
+}
+
+function enforceDistinctSquadInsights(squad: ProjectedPlayer[]): void {
+  const seen = new Set<string>();
+
+  for (const player of [...squad].sort((left, right) => right.projectedScore - left.projectedScore)) {
+    let currentKey = insightKey(player);
+
+    if (!seen.has(currentKey)) {
+      seen.add(currentKey);
+      continue;
+    }
+
+    for (let variationOffset = 1; variationOffset <= 6; variationOffset += 1) {
+      const candidate = buildPlayerExplanation(
+        {
+          position: player.position,
+          contributions: player.contributions,
+        },
+        variationOffset,
+      );
+
+      const candidateKey = `${normalizeInsightText(candidate.summary)}|${normalizeInsightText(candidate.whyPicked)}`;
+
+      if (!seen.has(candidateKey)) {
+        player.explanation = candidate;
+        currentKey = candidateKey;
+        break;
+      }
+    }
+
+    seen.add(currentKey);
+  }
+}
 
 function isPosition(player: ProjectedPlayer, position: ProjectedPlayer["position"]): boolean {
   return player.position === position;
@@ -153,6 +195,8 @@ function createMilpRecommendation(players: ProjectedPlayer[]): RecommendationRes
     return null;
   }
 
+  enforceDistinctSquadInsights(squad);
+
   return {
     squad,
     startingXI: [...startingXI].sort((a, b) => b.projectedScore - a.projectedScore),
@@ -230,6 +274,8 @@ function fallbackRecommendation(players: ProjectedPlayer[]): RecommendationResul
 
   const captain = startingXI[0] ?? squad[0];
   const viceCaptain = startingXI[1] ?? startingXI[0] ?? squad[1] ?? squad[0];
+
+  enforceDistinctSquadInsights(squad);
 
   return {
     squad,
