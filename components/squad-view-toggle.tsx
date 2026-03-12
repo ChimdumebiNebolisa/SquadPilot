@@ -14,19 +14,16 @@ export function SquadViewToggle({ value, onChange }: SquadViewToggleProps) {
       role="tablist"
       aria-label="View mode"
     >
-      <button
+      {/* Pitch tab commented out – list view only */}
+      {/* <button
         type="button"
         role="tab"
         aria-selected={value === "pitch"}
         onClick={() => onChange("pitch")}
-        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition min-[480px]:px-4 min-[480px]:py-2 min-[480px]:text-sm ${
-          value === "pitch"
-            ? "bg-panel-elevated text-white shadow-sm"
-            : "text-muted hover:text-foreground"
-        }`}
+        className={...}
       >
         Pitch
-      </button>
+      </button> */}
       <button
         type="button"
         role="tab"
