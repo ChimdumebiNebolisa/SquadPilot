@@ -13,16 +13,16 @@ function getContribution(contributions: FactorContribution[], factor: string): n
 
 function factorLabel(factor: FactorContribution["factor"]): string {
   if (factor === "recentForm") return "recent form";
-  if (factor === "pointsPerGame") return "points baseline";
-  if (factor === "expectedMinutes") return "minutes security";
-  if (factor === "fixtureDifficulty") return "fixture setup";
-  if (factor === "homeAway") return "venue context";
-  if (factor === "opponentStrength") return "opponent profile";
-  if (factor === "value") return "price efficiency";
-  if (factor === "differential") return "differential edge";
+  if (factor === "pointsPerGame") return "points per game";
+  if (factor === "expectedMinutes") return "expected minutes";
+  if (factor === "fixtureDifficulty") return "fixture difficulty";
+  if (factor === "homeAway") return "home/away";
+  if (factor === "opponentStrength") return "opponent strength";
+  if (factor === "value") return "value";
+  if (factor === "differential") return "differential";
   if (factor === "health") return "availability";
-  if (factor === "setPiece") return "set-piece role";
-  return "historical matchup";
+  if (factor === "setPiece") return "set-piece";
+  return "opponent";
 }
 
 function stableHash(input: string): number {
@@ -53,6 +53,14 @@ function topContributors(contributions: FactorContribution[], direction: "positi
   }
 
   return sorted.slice(0, count);
+}
+
+/** Downside factor = where this player is weakest (lowest value). Skip factors that are 0 or near-0 so we don't pick setPiece/historicalVsOpponent for everyone. */
+function worstDownsideFactor(contributions: FactorContribution[]): FactorContribution["factor"] {
+  const withValue = contributions.filter((c) => c.value > 0.05);
+  if (withValue.length === 0) return "fixtureDifficulty";
+  const byValue = [...withValue].sort((a, b) => a.value - b.value);
+  return byValue[0]!.factor;
 }
 
 function minutesLabel(expectedMinutes: number): "Strong" | "Likely" | "Unclear" {
@@ -227,80 +235,113 @@ function whyPickedText(
   if (position === "MID" || position === "FWD") {
     return pickVariant(
       [
-        `Picked because ${primaryLabel} and ${secondaryLabel} combine for one of the stronger attacking profiles in this pool.`,
-        `Picked for attacking slots where ${primaryLabel} and ${secondaryLabel} both clear the selection bar.`,
+        `Selected for ${primaryLabel} and ${secondaryLabel}.`,
+        `Selected for ${primaryLabel} and attacking output.`,
       ],
       seed,
     );
   }
 
+  if (position === "GK") {
+    if (minutes === "Strong" && fixture === "Good") return "Selected for expected minutes and fixture.";
+    if (value >= 0.7) return "Selected for value and clean-sheet potential.";
+    return pickVariant([`Selected for ${primaryLabel} and ${secondaryLabel}.`, "Selected for expected minutes and fixture."], seed);
+  }
+
+  if (position === "DEF") {
+    if (fixture === "Good" && minutes === "Strong") return "Selected for fixture and expected minutes.";
+    if (value >= 0.7) return "Good value and expected minutes.";
+    return `Selected for ${primaryLabel} and ${secondaryLabel}.`;
+  }
+
   if (fixture === "Good" && minutes === "Strong") {
     return pickVariant(
-      [
-        "Picked for role security and a favorable setup this gameweek.",
-        "Picked because both fixture context and expected minutes rate well.",
-      ],
+      ["Selected for expected minutes and fixture.", "Good expected minutes and fixture."],
       seed,
     );
   }
 
   if (value >= 0.7) {
     return pickVariant(
-      [
-        "Picked for value efficiency versus similarly priced alternatives.",
-        "Picked as a price-efficient route to stable projected output.",
-      ],
+      ["Selected for value and expected minutes.", "Good value for price."],
       seed,
     );
   }
 
   if (minutes === "Likely") {
-    return "Picked more for floor and role stability than pure upside chasing.";
+    return "Selected for expected minutes and floor.";
   }
 
-  return "Picked to keep balance across the XI while preserving short-term projection.";
+  return `Selected for ${primaryLabel} and ${secondaryLabel}.`;
+}
+
+/** Build downside copy from the actual factor value (0–1) so wording matches the data. */
+function downsideFromFactorAndValue(factor: FactorContribution["factor"], value: number): string {
+  const low = value < 0.4;
+  const midLow = value >= 0.4 && value < 0.55;
+
+  switch (factor) {
+    case "expectedMinutes":
+      if (low) return "very uncertain minutes.";
+      if (midLow) return "minutes on the low side.";
+      return "minutes not locked in.";
+    case "fixtureDifficulty":
+      if (low) return "very tough fixture.";
+      if (midLow) return "tougher fixture.";
+      return "fixture slightly against.";
+    case "recentForm":
+      if (low) return "recent form has dipped.";
+      if (midLow) return "weaker recent form.";
+      return "form not a strength.";
+    case "value":
+      if (low) return "pricey for output.";
+      if (midLow) return "value not great.";
+      return "value only okay.";
+    case "pointsPerGame":
+      if (low) return "low points per game.";
+      if (midLow) return "weaker points baseline.";
+      return "points baseline modest.";
+    case "opponentStrength":
+      if (low) return "very strong opposition.";
+      if (midLow) return "strong opposition.";
+      return "opponent decent.";
+    case "homeAway":
+      if (low) return "away fixture.";
+      return "venue not ideal.";
+    case "health":
+      if (low) return "availability a concern.";
+      return "availability worth watching.";
+    case "differential":
+      if (low) return "high ownership.";
+      if (midLow) return "differential limited.";
+      return "ownership not low.";
+    case "setPiece":
+      if (low) return "no set-piece role.";
+      return "set-piece role limited.";
+    case "historicalVsOpponent":
+      if (low) return "tough historical matchup.";
+      if (midLow) return "historical matchup not favorable.";
+      return "record vs opponent mixed.";
+    default:
+      return "strong opposition.";
+  }
 }
 
 function riskText(
+  contributions: FactorContribution[],
   fixture: "Good" | "Neutral" | "Tough",
   minutes: "Strong" | "Likely" | "Unclear",
   health: "Available" | "Doubtful",
-  seed: number,
   downsideFactor: FactorContribution["factor"],
 ): string {
-  const downsideLabel = factorLabel(downsideFactor);
-
-  if (health === "Doubtful") {
-    return pickVariant(
-      [
-        "Risk: availability uncertainty could cap minutes and reduce return.",
-        "Risk: fitness uncertainty remains the main downside in this spot.",
-      ],
-      seed,
-    );
-  }
-
-  if (minutes === "Unclear") {
-    return "Risk: uncertain minutes can limit reliability even when the baseline projection is acceptable.";
-  }
-
+  if (health === "Doubtful") return "availability uncertainty.";
+  if (minutes === "Unclear") return "uncertain minutes.";
   if (fixture === "Tough") {
-    return pickVariant(
-      [
-        "Risk: fixture could limit upside even if the minutes look safe.",
-        "Risk: tougher opposition lowers ceiling despite a stable role.",
-      ],
-      seed,
-    );
+    const v = getContribution(contributions, "fixtureDifficulty");
+    return downsideFromFactorAndValue("fixtureDifficulty", v);
   }
-
-  return pickVariant(
-    [
-      `Risk: ${downsideLabel} is the weakest signal and could cap upside versus alternatives.`,
-      "Risk: profile is stable, but this reads more as floor security than pure ceiling chasing.",
-    ],
-    seed,
-  );
+  const value = getContribution(contributions, downsideFactor);
+  return downsideFromFactorAndValue(downsideFactor, value);
 }
 
 export function buildPlayerExplanation({ position, contributions }: ExplanationInput, variationOffset = 0): PlayerExplanation {
@@ -318,15 +359,14 @@ export function buildPlayerExplanation({ position, contributions }: ExplanationI
   const seed = seedFromFactors(expectedMinutes, fixtureDifficulty, value, recentForm) + profileSeed + variationOffset * 17;
   const mode = pickMode(position, seed + 5);
   const positives = topContributors(contributions, "positive", 2);
-  const negatives = topContributors(contributions, "negative", 1);
   const leadPositive = positives[0]?.factor ?? "recentForm";
   const secondPositive = positives[1]?.factor ?? "expectedMinutes";
-  const leadNegative = negatives[0]?.factor ?? "fixtureDifficulty";
+  const leadNegative = worstDownsideFactor(contributions);
 
   return {
     summary: summaryByRole(position, value, recentForm, expectedMinutes, fixture, seed, mode, leadPositive),
     whyPicked: whyPickedText(position, fixture, minutes, value, seed + 3, leadPositive, secondPositive),
-    mainRisk: riskText(fixture, minutes, healthStatus, seed + 7, leadNegative),
+    mainRisk: riskText(contributions, fixture, minutes, healthStatus, leadNegative),
     confidence,
     tags: [`Fixture: ${fixture}`, `Minutes: ${minutes}`, `Health: ${healthStatus}`, `Mode: ${mode}`],
   };
