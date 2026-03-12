@@ -1,10 +1,30 @@
 import { NextResponse } from "next/server";
 import { FplHttpError, fetchBootstrapStatic, fetchFixturesForEvent } from "@/lib/fpl/fetchers";
+import type { NormalizedFixture } from "@/lib/fpl/types";
 import { normalizeBootstrap, normalizeFixtures, resolveGameweeksPlayed, resolveNextGameweek } from "@/lib/fpl/normalize";
 import { scorePlayers } from "@/lib/scoring/score";
 import { SCORING_WEIGHTS_VERSION } from "@/lib/scoring/weights";
+import type { ProjectedPlayer } from "@/lib/scoring/types";
 import { buildRecommendation } from "@/lib/solver/recommend";
 import { checkRateLimit } from "@/lib/server/rate-limit";
+
+function setOpponentTeamIds(
+  recommendation: { squad: ProjectedPlayer[]; startingXI: ProjectedPlayer[]; bench: ProjectedPlayer[]; captain: ProjectedPlayer; viceCaptain: ProjectedPlayer },
+  fixtures: NormalizedFixture[],
+): void {
+  const byTeam = new Map<number, number>();
+  for (const f of fixtures) {
+    byTeam.set(f.teamH, f.teamA);
+    byTeam.set(f.teamA, f.teamH);
+  }
+  const seen = new Set<number>();
+  for (const p of recommendation.squad) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    const opponent = byTeam.get(p.teamId);
+    (p as ProjectedPlayer & { opponentTeamId?: number | null }).opponentTeamId = opponent ?? null;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -38,6 +58,7 @@ export async function POST(request: Request) {
     const fixtures = normalizeFixtures(fixturesRaw);
     const projectedPlayers = scorePlayers(players, teams, fixtures, gameweeksPlayed);
     const recommendation = buildRecommendation(projectedPlayers);
+    setOpponentTeamIds(recommendation, fixtures);
 
     return NextResponse.json({
       ok: true,

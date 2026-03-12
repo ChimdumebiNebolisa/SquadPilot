@@ -121,7 +121,11 @@ export function PlayerTile({
     );
   }
 
-  // pitch (default) – portrait on mobile (height > width), landscape on sm+; two-line name to reduce cramping
+  // pitch: name, club, vs opponent, C/VC; on mobile hide points until card is clicked
+  const opponent =
+    player.opponentTeamId != null ? teamShortNames[player.opponentTeamId] ?? `T${player.opponentTeamId}` : null;
+  const showPoints = isSelected; // on mobile show points only when selected; on desktop show always (see className)
+
   return (
     <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-1.5 py-1.5 min-h-[80px] justify-between min-[480px]:min-h-[58px] min-[480px]:px-2 min-[480px]:py-2`}>
       <div className="flex items-start justify-between gap-1 min-w-0">
@@ -138,9 +142,18 @@ export function PlayerTile({
           </span>
         )}
       </div>
-      <div className="flex items-baseline justify-between gap-1.5">
-        <span className="text-[10px] leading-snug uppercase tracking-wider text-muted truncate">{club}</span>
-        <span className="text-base font-bold tabular-nums leading-none text-brand">
+      <div className="flex items-baseline justify-between gap-1.5 min-w-0">
+        <div className="min-w-0 flex flex-col items-start gap-0.5">
+          <span className="text-[10px] leading-snug uppercase tracking-wider text-muted truncate max-w-full">{club}</span>
+          {opponent != null && (
+            <span className="text-[9px] leading-snug uppercase tracking-wider text-muted/80 truncate max-w-full">
+              vs {opponent}
+            </span>
+          )}
+        </div>
+        <span
+          className={`shrink-0 text-base font-bold tabular-nums leading-none text-brand ${showPoints ? "inline" : "hidden min-[480px]:inline"}`}
+        >
           {player.projectedPoints.toFixed(1)}
         </span>
       </div>

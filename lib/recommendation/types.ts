@@ -18,6 +18,8 @@ export interface PlayerView {
   /** Deterministic % chance of starting next GW (0–100). */
   chanceOfStarting: number;
   chanceOfPlayingNextRound: number | null;
+  /** Next-GW opponent team id (for "vs XYZ" on pitch). */
+  opponentTeamId?: number | null;
   status: string;
   explanation: {
     summary: string;

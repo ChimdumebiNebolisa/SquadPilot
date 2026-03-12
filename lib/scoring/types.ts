@@ -56,6 +56,8 @@ export interface ProjectedPlayer extends NormalizedPlayer {
   chanceOfFivePlusPoints: number;
   /** Deterministic % chance of starting next GW (0–100), from availability + minutes history. */
   chanceOfStarting: number;
+  /** Next-GW opponent team id (set when building response). */
+  opponentTeamId?: number | null;
   contributions: FactorContribution[];
   explanation: PlayerExplanation;
 }
