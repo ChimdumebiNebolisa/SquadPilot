@@ -82,7 +82,10 @@ export function PlayerTile({
           </p>
           <p className="text-[10px] leading-snug uppercase tracking-wider text-muted">{club}</p>
         </div>
-        <span className="shrink-0 text-sm font-bold tabular-nums text-brand">{player.projectedPoints.toFixed(1)}</span>
+        <span className="shrink-0 flex items-center gap-0.5 text-sm font-bold tabular-nums text-brand">
+          {player.projectedPoints.toFixed(1)}
+          <svg className="h-3 w-3 opacity-70" viewBox="0 0 6 10" fill="currentColor" aria-hidden><path d="M0 0l4 5-4 5V0z"/></svg>
+        </span>
       </button>
     );
   }
@@ -114,49 +117,42 @@ export function PlayerTile({
           </div>
           <p className="text-[10px] leading-snug uppercase tracking-wider text-muted">{club} · {player.position}</p>
         </div>
-        <span className="shrink-0 w-10 text-right text-base font-bold tabular-nums text-brand">
+        <span className="shrink-0 flex w-10 items-center justify-end gap-0.5 text-base font-bold tabular-nums text-brand">
           {player.projectedPoints.toFixed(1)}
+          <svg className="h-3.5 w-3.5 opacity-70" viewBox="0 0 6 10" fill="currentColor" aria-hidden><path d="M0 0l4 5-4 5V0z"/></svg>
         </span>
       </button>
     );
   }
 
-  // pitch: name, club, vs opponent, C/VC; on mobile hide points until card is clicked
-  const opponent =
-    player.opponentTeamId != null ? teamShortNames[player.opponentTeamId] ?? `T${player.opponentTeamId}` : null;
-  const showPoints = isSelected; // on mobile show points only when selected; on desktop show always (see className)
-
+  // pitch: short horizontal bar (position | name+club); numbers only in popup when card is clicked
   return (
-    <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-1.5 py-1.5 min-h-[80px] justify-between min-[480px]:min-h-[58px] min-[480px]:px-2 min-[480px]:py-2`}>
-      <div className="flex items-start justify-between gap-1 min-w-0">
-        <p className={`min-w-0 font-medium leading-tight text-white/95 line-clamp-2 ${nameSizeClass}`} title={player.webName}>
-          {displayName}
-        </p>
-        {badge && (
-          <span
-            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-              badge === "C" ? "bg-captain/20 text-captain" : "bg-vice/20 text-vice"
-            }`}
-          >
-            {badge}
-          </span>
-        )}
-      </div>
-      <div className="flex items-baseline justify-between gap-1.5 min-w-0">
-        <div className="min-w-0 flex flex-col items-start gap-0.5">
-          <span className="text-[10px] leading-snug uppercase tracking-wider text-muted truncate max-w-full">{club}</span>
-          {opponent != null && (
-            <span className="text-[9px] leading-snug uppercase tracking-wider text-muted/80 truncate max-w-full">
-              vs {opponent}
+    <button
+      type="button"
+      onClick={() => onSelect(player)}
+      className={`${base} flex items-center gap-2 px-2 py-1.5 min-h-[40px] min-[480px]:gap-2.5 min-[480px]:px-2.5 min-[480px]:py-2 min-[480px]:min-h-[44px]`}
+    >
+      {/* Left slot: position (like B1/B2 on bench) */}
+      <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted">
+        {player.position}
+      </span>
+      {/* Center: name + badge, then club only; same as bench (min-w-0 flex-1) for same dimensions */}
+      <div className="min-w-0 flex-1 flex flex-col items-start gap-0.5 text-left">
+        <div className="flex items-center gap-1.5 w-full min-w-0">
+          <p className={`min-w-0 font-medium leading-tight text-white/95 truncate ${nameSizeClass}`} title={player.webName}>
+            {displayName}
+          </p>
+          {badge && (
+            <span
+              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${badge === "C" ? "bg-captain/20 text-captain" : "bg-vice/20 text-vice"}`}
+            >
+              {badge}
             </span>
           )}
         </div>
-        <span
-          className={`shrink-0 text-base font-bold tabular-nums leading-none text-brand ${showPoints ? "inline" : "hidden min-[480px]:inline"}`}
-        >
-          {player.projectedPoints.toFixed(1)}
-        </span>
+        <span className="text-[10px] leading-snug uppercase tracking-wider text-muted truncate max-w-full">{club}</span>
       </div>
+      {/* Points hidden on tile; shown only in detail sheet popup when card is clicked */}
     </button>
   );
 }

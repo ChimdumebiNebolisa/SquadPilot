@@ -38,6 +38,8 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
   if (!player) return null;
 
   const club = teamShortNames[player.teamId] ?? `T${player.teamId}`;
+  const opponent =
+    player.opponentTeamId != null ? teamShortNames[player.opponentTeamId] ?? `T${player.opponentTeamId}` : null;
   const expectedMins = expectedMinutesDisplay(player);
   const fixtureDiff = fixtureDifficulty1To5(player);
   const fivePlusChance = Math.round(player.chanceOfFivePlusPoints);
@@ -68,16 +70,26 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
               <p className="mt-1 text-[11px] leading-snug uppercase tracking-wider text-muted">
                 {club} · {player.position}
               </p>
+              {opponent != null && (
+                <p className="mt-0.5 text-[11px] leading-snug uppercase tracking-wider text-muted/90">
+                  vs {opponent}
+                </p>
+              )}
             </div>
-            <span className="shrink-0 text-xl font-bold tabular-nums leading-none text-brand min-[480px]:text-2xl">
+            <span className="shrink-0 flex items-center gap-1 text-lg font-bold tabular-nums leading-none text-brand min-[480px]:text-xl">
               {player.projectedPoints.toFixed(1)} pts
+              <svg className="h-4 w-4 min-[480px]:h-5 min-[480px]:w-5 opacity-70" viewBox="0 0 6 10" fill="currentColor" aria-hidden><path d="M0 0l4 5-4 5V0z"/></svg>
             </span>
           </div>
 
           <dl className="mt-3 space-y-2 text-[11px] leading-snug min-[480px]:mt-4 min-[480px]:space-y-2.5">
             <div className="flex justify-between gap-2">
               <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">% start</span><span className="hidden min-[480px]:inline">% chance of starting</span></dt>
-              <dd className="shrink-0 font-medium tabular-nums text-foreground">{player.chanceOfStarting != null ? `${player.chanceOfStarting}%` : "—"}</dd>
+              <dd className="shrink-0 font-medium tabular-nums text-foreground">
+              {typeof player.chanceOfStarting === "number" && !Number.isNaN(player.chanceOfStarting)
+                ? `${Math.round(player.chanceOfStarting)}%`
+                : "—"}
+            </dd>
             </div>
             <div className="flex justify-between gap-2">
               <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">Exp. mins</span><span className="hidden min-[480px]:inline">Expected minutes</span></dt>

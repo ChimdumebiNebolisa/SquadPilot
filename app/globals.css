@@ -109,7 +109,7 @@ body {
 .perspective-pitch-wrapper {
   perspective: 720px;
   perspective-origin: 50% 28%;
-  --pitch-tile-width: 82px;
+  --pitch-tile-width: 120px;
 }
 
 .perspective-pitch-surface {
@@ -157,20 +157,31 @@ body {
   }
 }
 
-/* Midfield row: wrap to 3+2 on narrow screens (no inline width/columns so this can apply) */
-@media (max-width: 479px) {
-  .pitch-row--mid {
-    width: 100%;
-    grid-template-columns: repeat(3, minmax(0, var(--pitch-tile-width, 82px)));
-  }
+/* Midfield row: full width, flexible columns (same as bench); 8px gap so center margin adds space only between 2–3 and 3–4 */
+.pitch-row--mid {
+  width: 100%;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
 }
 
-@media (min-width: 480px) {
-  .pitch-row--mid {
-    width: min(100%, calc(5 * var(--pitch-tile-width, 82px) + 4 * 8px));
-    grid-template-columns: repeat(5, minmax(0, var(--pitch-tile-width, 82px)));
-  }
-}
+/* Inverted V stagger when cramped (4 or 5 players): edges low, center high; symmetric; 3- and 2-player rows stay straight */
+.pitch-row--stagger-4 > *:nth-child(1) { transform: translateY(12px); }
+.pitch-row--stagger-4 > *:nth-child(2) { transform: translateY(-6px) translateX(16px); }
+.pitch-row--stagger-4 > *:nth-child(3) { transform: translateY(-6px) translateX(-16px); }
+.pitch-row--stagger-4 > *:nth-child(4) { transform: translateY(12px); }
+
+/* 5-player: base inverted V for all 5-player outfield rows */
+.pitch-row--stagger-5 > *:nth-child(1) { transform: translateY(12px); }
+.pitch-row--stagger-5 > *:nth-child(2) { transform: translateY(6px) translateX(20px); }
+.pitch-row--stagger-5 > *:nth-child(3) { transform: translateY(-12px); }
+.pitch-row--stagger-5 > *:nth-child(4) { transform: translateY(6px) translateX(-20px); }
+.pitch-row--stagger-5 > *:nth-child(5) { transform: translateY(12px); }
+
+/* Midfield 5 only: tighter wings (10px translateX) + extra space between 2-3 and 3-4; center card content centred */
+.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(2) { transform: translateY(6px) translateX(10px); margin-right: 12px; }
+.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(3) { margin-left: 12px; margin-right: 12px; justify-content: center; }
+.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(3) > *:nth-child(2) { align-items: center; text-align: center; }
+.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(4) { transform: translateY(6px) translateX(-10px); margin-left: 12px; }
 
 /* Bottom sheet */
 .bottom-sheet-backdrop {

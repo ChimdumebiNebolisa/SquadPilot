@@ -69,23 +69,19 @@ export function PerspectivePitch({
         <div className="relative flex flex-col items-center gap-3 min-[480px]:gap-4 md:gap-5 w-full min-w-0">
           {lines.map(({ key, players, scale, opacity }) => {
             const count = Math.max(players.length, 1);
-            // Match gap-3 (12px) used on mobile so width calculation doesn't undercount and cause overflow
-            const gapPx = 12;
-            const maxRowWidth = `calc(${count} * var(--pitch-tile-width, 82px) + ${(count - 1) * gapPx}px)`;
             const isMid = key === "MID";
+            const isOutfield = key === "DEF" || key === "MID" || key === "FWD";
+            const staggerClass = isOutfield && count > 3 ? (count === 5 ? "pitch-row--stagger-5" : "pitch-row--stagger-4") : "";
             const baseStyle: CSSProperties = {
               transform: scale,
               margin: "0 auto",
+              width: "100%",
+              gridTemplateColumns: `repeat(${count}, 1fr)`,
             };
-            // Don't set width/gridTemplateColumns inline for MID row so CSS .pitch-row--mid can control wrap on mobile
-            if (!isMid) {
-              baseStyle.width = `min(100%, ${maxRowWidth})`;
-              baseStyle.gridTemplateColumns = `repeat(${count}, minmax(0, var(--pitch-tile-width, 82px)))`;
-            }
             return (
             <div
               key={key}
-              className={`grid w-full min-w-0 justify-center gap-3 min-[480px]:gap-2 md:gap-2.5 ${opacity} ${isMid ? "pitch-row--mid" : ""}`}
+              className={`grid w-full min-w-0 justify-center gap-3 min-[480px]:gap-3 md:gap-4 ${opacity} ${isMid ? "pitch-row--mid" : ""} ${staggerClass}`}
               style={baseStyle}
             >
               {players.map((player) => (
@@ -101,7 +97,7 @@ export function PerspectivePitch({
                 />
               ))}
               {players.length === 0 && (
-                <div className="flex h-[80px] min-w-0 items-center justify-center rounded-xl border border-dashed border-border/50 text-[10px] text-muted min-[480px]:h-[58px]" style={{ width: "var(--pitch-tile-width, 82px)" }}>
+                <div className="flex h-[40px] min-w-0 w-full items-center justify-center rounded-xl border border-dashed border-border/50 text-[10px] text-muted min-[480px]:h-[44px]">
                   —
                 </div>
               )}
