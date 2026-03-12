@@ -44,12 +44,23 @@ export function extractFeaturesForPlayer(
   const recentForm = normalizeRange(player.form, 0, 10);
   const pointsPerGame = normalizeRange(player.pointsPerGame, 0, 10);
 
-  const minutesBase = player.chanceOfPlayingNextRound === null ? 0.85 : clamp(player.chanceOfPlayingNextRound / 100);
+  // When chance is null: GK gets 0.85 (only one starter, rarely in injury news); outfield gets 0.65 (rotation/unknown).
+  // Avoids handing all "no news" players the same high prior that systematically favored GKs.
+  const defaultMinutesWhenNull = player.position === "GK" ? 0.85 : 0.65;
+  const minutesBase =
+    player.chanceOfPlayingNextRound === null ? defaultMinutesWhenNull : clamp(player.chanceOfPlayingNextRound / 100);
   const expectedMinutes = player.status === "i" || player.status === "s" ? minutesBase * 0.4 : minutesBase;
 
   const fixtureDifficulty = clamp((5 - fixtureContext.difficulty) / 4);
   const homeAway = fixtureContext.isHome === null ? 0.5 : fixtureContext.isHome ? 1 : 0;
-  const opponentStrength = opponent?.strength ? clamp(1 - normalizeRange(opponent.strength, 1, 5)) : 0.5;
+  // Opponent strength: use actual API range (strength_overall_home is ~1000–1400), not fake 1–5
+  const strengths = teams.map((t) => t.strength).filter((s): s is number => s != null);
+  const minStr = strengths.length ? Math.min(...strengths) : 1000;
+  const maxStr = strengths.length ? Math.max(...strengths) : 1400;
+  const opponentStrength =
+    opponent?.strength != null
+      ? clamp(1 - (maxStr > minStr ? (opponent.strength - minStr) / (maxStr - minStr) : 0.5))
+      : 0.5;
 
   const value = player.price > 0 ? clamp((player.pointsPerGame / player.price) / 1.2) : 0;
   const differential = clamp((25 - player.selectedByPercent) / 25);
@@ -60,6 +71,13 @@ export function extractFeaturesForPlayer(
       : player.chanceOfPlayingNextRound === null
         ? 0.65
         : clamp(player.chanceOfPlayingNextRound / 100);
+
+  // FPL expected points for next GW: scale 0–15 maps to 0–1 (typical range ~0–10)
+  const fplExpectedPoints = clamp(player.epNext / 15);
+
+  // Attacking upside from ICT index; only MID/FWD get non-zero (GK/DEF use 0)
+  const attackingUpside =
+    player.position === "MID" || player.position === "FWD" ? clamp(player.ictIndex / 150) : 0;
 
   return {
     recentForm,
@@ -73,5 +91,7 @@ export function extractFeaturesForPlayer(
     health,
     setPiece: 0,
     historicalVsOpponent: 0,
+    fplExpectedPoints,
+    attackingUpside,
   };
 }

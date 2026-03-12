@@ -11,6 +11,10 @@ export interface NormalizedPlayer {
   selectedByPercent: number;
   status: string;
   chanceOfPlayingNextRound: number | null;
+  /** FPL's expected points for next gameweek (from API ep_next). */
+  epNext: number;
+  /** ICT index from API (influence + creativity + threat); used for attacking upside. */
+  ictIndex: number;
 }
 
 export interface NormalizedTeam {

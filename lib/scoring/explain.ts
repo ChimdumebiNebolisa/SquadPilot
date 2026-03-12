@@ -22,6 +22,8 @@ function factorLabel(factor: FactorContribution["factor"]): string {
   if (factor === "differential") return "differential";
   if (factor === "health") return "availability";
   if (factor === "setPiece") return "set-piece";
+  if (factor === "fplExpectedPoints") return "FPL expected points";
+  if (factor === "attackingUpside") return "attacking upside";
   return "opponent";
 }
 
@@ -63,6 +65,8 @@ const PLAYER_SPECIFIC_FACTORS: ReadonlySet<FactorContribution["factor"]> = new S
   "value",
   "differential",
   "health",
+  "fplExpectedPoints",
+  "attackingUpside",
 ]);
 
 /** Downside factor = this player's weakest dimension among player-specific factors (lowest value). Skips team-level and zero-value factors. */
@@ -334,6 +338,14 @@ function downsideFromFactorAndValue(factor: FactorContribution["factor"], value:
       if (low) return "tough historical matchup.";
       if (midLow) return "historical matchup not favorable.";
       return "record vs opponent mixed.";
+    case "fplExpectedPoints":
+      if (low) return "low FPL expected points.";
+      if (midLow) return "FPL expected points modest.";
+      return "expected points not a standout.";
+    case "attackingUpside":
+      if (low) return "limited attacking upside.";
+      if (midLow) return "modest attacking threat.";
+      return "attacking upside not high.";
     default:
       return "strong opposition.";
   }

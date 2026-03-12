@@ -2,6 +2,7 @@ import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam } from "@/lib/
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
 import { chanceOfFivePlusPoints } from "@/lib/scoring/probability";
+import { getWeightsForPosition } from "@/lib/scoring/weights";
 import type { FactorContribution, PlayerFeatureVector, ProjectedPlayer, ScoringWeights } from "@/lib/scoring/types";
 
 function toContributions(features: PlayerFeatureVector, weights: ScoringWeights): FactorContribution[] {
@@ -25,11 +26,11 @@ export function scorePlayers(
   players: NormalizedPlayer[],
   teams: NormalizedTeam[],
   fixtures: NormalizedFixture[],
-  weights: ScoringWeights,
 ): ProjectedPlayer[] {
   return players
     .map((player) => {
       const features = extractFeaturesForPlayer(player, teams, fixtures);
+      const weights = getWeightsForPosition(player.position);
       const contributions = toContributions(features, weights);
       const projectedScore = contributions.reduce((sum, entry) => sum + entry.contribution, 0);
       const projectedPoints = Number((projectedScore * 10).toFixed(2));

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { FplHttpError, fetchBootstrapStatic, fetchFixturesForEvent } from "@/lib/fpl/fetchers";
 import { normalizeBootstrap, normalizeFixtures, resolveNextGameweek } from "@/lib/fpl/normalize";
 import { scorePlayers } from "@/lib/scoring/score";
-import { V1_FIXED_WEIGHTS } from "@/lib/scoring/weights";
+import { SCORING_WEIGHTS_VERSION } from "@/lib/scoring/weights";
 import { buildRecommendation } from "@/lib/solver/recommend";
 import { checkRateLimit } from "@/lib/server/rate-limit";
 
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
     const { players, teams } = normalizeBootstrap(bootstrapRaw);
     const fixtures = normalizeFixtures(fixturesRaw);
-    const projectedPlayers = scorePlayers(players, teams, fixtures, V1_FIXED_WEIGHTS);
+    const projectedPlayers = scorePlayers(players, teams, fixtures);
     const recommendation = buildRecommendation(projectedPlayers);
 
     return NextResponse.json({
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
         projectedPlayers,
         recommendation,
         scoring: {
-          weightsVersion: V1_FIXED_WEIGHTS.version,
+          weightsVersion: SCORING_WEIGHTS_VERSION,
         },
         teams,
         fixtures,

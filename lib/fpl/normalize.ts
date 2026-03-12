@@ -115,6 +115,8 @@ export function normalizeBootstrap(
         selectedByPercent: toNumber(player.selected_by_percent, 0),
         status: toStringValue(player.status, "u"),
         chanceOfPlayingNextRound: toNullableNumber(player.chance_of_playing_next_round),
+        epNext: toNumber(player.ep_next, 0),
+        ictIndex: toNumber(player.ict_index, 0),
       };
     })
     .filter((player) => player.id > 0 && player.teamId > 0);

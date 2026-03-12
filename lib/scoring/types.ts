@@ -12,6 +12,10 @@ export interface PlayerFeatureVector {
   health: number;
   setPiece: number;
   historicalVsOpponent: number;
+  /** FPL's expected points next GW, normalized 0–1 (scale 0–15). */
+  fplExpectedPoints: number;
+  /** Attacking upside from ICT index; 0 for GK/DEF, normalized for MID/FWD. */
+  attackingUpside: number;
 }
 
 export interface ScoringWeights {
@@ -27,6 +31,8 @@ export interface ScoringWeights {
   health: number;
   setPiece: number;
   historicalVsOpponent: number;
+  fplExpectedPoints: number;
+  attackingUpside: number;
 }
 
 export interface FactorContribution {
