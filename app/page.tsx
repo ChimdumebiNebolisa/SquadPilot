@@ -28,7 +28,8 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [response, setResponse] = useState<RecommendResponse | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerView | null>(null);
-  const [viewMode, setViewMode] = useState<SquadViewMode>("pitch");
+  /** Default to list view on page load (not pitch). */
+  const [viewMode, setViewMode] = useState<SquadViewMode>("list");
 
   const recommendation = response?.data.recommendation;
   const teamShortNames = Object.fromEntries((response?.data.teams ?? []).map((t) => [t.id, t.shortName]));
@@ -92,34 +93,18 @@ export default function Home() {
             <SquadSummaryStrip recommendation={recommendation} />
             <SquadViewToggle value={viewMode} onChange={setViewMode} />
 
-            {viewMode === "pitch" ? (
-              <div className="rounded-2xl border border-border/50 overflow-hidden">
-                <PerspectivePitch
-                  startingXI={recommendation.startingXI}
-                  captainId={recommendation.captain.id}
-                  viceId={recommendation.viceCaptain.id}
-                  teamShortNames={teamShortNames}
-                  selectedPlayerId={selectedPlayer?.id ?? null}
-                  onSelect={setSelectedPlayer}
-                />
-                <BenchDock
-                  bench={recommendation.bench}
-                  teamShortNames={teamShortNames}
-                  selectedPlayerId={selectedPlayer?.id ?? null}
-                  onSelect={setSelectedPlayer}
-                />
-              </div>
-            ) : (
-              <RecommendedListView
-                startingXI={recommendation.startingXI}
-                bench={recommendation.bench}
-                captainId={recommendation.captain.id}
-                viceId={recommendation.viceCaptain.id}
-                teamShortNames={teamShortNames}
-                selectedPlayerId={selectedPlayer?.id ?? null}
-                onSelect={setSelectedPlayer}
-              />
-            )}
+            {/* Pitch section commented out – list view only */}
+            {/* viewMode === "pitch" ? ( <div><PerspectivePitch ... /><BenchDock ... /></div> ) : ( */}
+            <RecommendedListView
+              startingXI={recommendation.startingXI}
+              bench={recommendation.bench}
+              captainId={recommendation.captain.id}
+              viceId={recommendation.viceCaptain.id}
+              teamShortNames={teamShortNames}
+              selectedPlayerId={selectedPlayer?.id ?? null}
+              onSelect={setSelectedPlayer}
+            />
+            {/* )} */}
 
             <PlayerDetailSheet
               player={selectedPlayer}
