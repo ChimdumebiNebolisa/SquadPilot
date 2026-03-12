@@ -18,7 +18,7 @@ export interface PlayerTileProps {
 function formatDisplayName(webName: string, variant: "pitch" | "bench" | "list"): { text: string; className: string } {
   const raw = webName.trim();
   const parts = raw.split(/\s+/);
-  const maxLen = variant === "pitch" ? 9 : variant === "list" ? 18 : 11;
+  const maxLen = variant === "pitch" ? 10 : variant === "list" ? 18 : 12;
   const nameClass = variant === "pitch" ? "text-[10px] leading-snug min-[480px]:text-[11px]" : "text-[11px] leading-snug min-[480px]:text-xs";
   if (parts.length <= 1) {
     const text = raw.length > maxLen ? raw.slice(0, maxLen - 1) + "·" : raw;

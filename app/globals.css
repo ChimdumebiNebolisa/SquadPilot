@@ -166,7 +166,7 @@ body {
 
 @media (max-width: 319px) {
   .perspective-pitch-wrapper {
-    --pitch-tile-width: 62px;
+    --pitch-tile-width: 68px;
   }
 }
 

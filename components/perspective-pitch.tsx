@@ -65,11 +65,11 @@ export function PerspectivePitch({
           aria-hidden
         />
 
-        <div className="relative flex flex-col items-center gap-2.5 min-[480px]:gap-4 md:gap-5">
+        <div className="relative flex flex-col items-center gap-3 min-[480px]:gap-4 md:gap-5">
           {lines.map(({ key, players, scale, opacity }) => (
             <div
               key={key}
-              className={`grid w-full justify-center gap-1.5 min-[480px]:gap-2 md:gap-2.5 ${opacity}`}
+              className={`grid w-full justify-center gap-2 min-[480px]:gap-2 md:gap-2.5 ${opacity}`}
               style={{
                 transform: scale,
                 gridTemplateColumns: `repeat(${Math.max(players.length, 1)}, var(--pitch-tile-width, 82px))`,
