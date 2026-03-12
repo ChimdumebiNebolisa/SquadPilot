@@ -109,6 +109,7 @@ body {
 .perspective-pitch-wrapper {
   perspective: 720px;
   perspective-origin: 50% 28%;
+  --pitch-tile-width: 82px;
 }
 
 .perspective-pitch-surface {
@@ -150,11 +151,6 @@ body {
   .perspective-pitch-surface {
     transform: rotateX(2.5deg);
   }
-}
-
-/* Pitch tile width: smaller on narrow viewports so grid fits without overflow */
-.perspective-pitch-wrapper {
-  --pitch-tile-width: 82px;
 }
 
 @media (max-width: 480px) {

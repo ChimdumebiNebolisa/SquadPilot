@@ -47,7 +47,7 @@ export function PerspectivePitch({
 
   return (
     <div className="perspective-pitch-wrapper w-full">
-      <div className="perspective-pitch-surface rounded-2xl border border-border/50 p-4 md:p-5">
+      <div className="perspective-pitch-surface rounded-2xl border border-border/50 p-3 sm:p-4 md:p-5">
         {/* Subtle pitch markings */}
         <div
           className="pointer-events-none absolute left-1/2 top-[20%] h-12 w-12 -translate-x-1/2 rounded-full border border-[var(--pitch-line)]"
@@ -65,14 +65,14 @@ export function PerspectivePitch({
           aria-hidden
         />
 
-        <div className="relative flex flex-col items-center gap-4 md:gap-5">
+        <div className="relative flex flex-col items-center gap-2.5 sm:gap-4 md:gap-5">
           {lines.map(({ key, players, scale, opacity }) => (
             <div
               key={key}
-              className={`grid w-full justify-center gap-2 md:gap-2.5 ${opacity}`}
+              className={`grid w-full justify-center gap-1.5 sm:gap-2 md:gap-2.5 ${opacity}`}
               style={{
                 transform: scale,
-                gridTemplateColumns: `repeat(${Math.max(players.length, 1)}, 82px)`,
+                gridTemplateColumns: `repeat(${Math.max(players.length, 1)}, var(--pitch-tile-width, 82px))`,
                 margin: "0 auto",
               }}
             >
@@ -89,7 +89,7 @@ export function PerspectivePitch({
                 />
               ))}
               {players.length === 0 && (
-                <div className="flex h-[58px] w-[82px] items-center justify-center rounded-xl border border-dashed border-border/50 text-[10px] text-muted">
+                <div className="flex h-[52px] min-w-0 items-center justify-center rounded-xl border border-dashed border-border/50 text-[10px] text-muted sm:h-[58px]" style={{ width: "var(--pitch-tile-width, 82px)" }}>
                   —
                 </div>
               )}

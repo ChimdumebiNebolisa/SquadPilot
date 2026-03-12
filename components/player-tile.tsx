@@ -18,8 +18,8 @@ export interface PlayerTileProps {
 function formatDisplayName(webName: string, variant: "pitch" | "bench" | "list"): { text: string; className: string } {
   const raw = webName.trim();
   const parts = raw.split(/\s+/);
-  const maxLen = variant === "pitch" ? 10 : variant === "list" ? 18 : 12;
-  const nameClass = variant === "pitch" ? "text-[10px]" : "text-[11px]";
+  const maxLen = variant === "pitch" ? 9 : variant === "list" ? 18 : 11;
+  const nameClass = variant === "pitch" ? "text-[9px] sm:text-[10px]" : "text-[10px] sm:text-[11px]";
   if (parts.length <= 1) {
     const text = raw.length > maxLen ? raw.slice(0, maxLen - 1) + "·" : raw;
     return { text, className: nameClass };
@@ -70,7 +70,7 @@ export function PlayerTile({
       <button
         type="button"
         onClick={() => onSelect(player)}
-        className={`${base} flex items-center gap-2 px-2 py-1.5 min-h-[40px]`}
+        className={`${base} flex items-center gap-1.5 px-1.5 py-1 min-h-[36px] sm:gap-2 sm:px-2 sm:py-1.5 sm:min-h-[40px]`}
       >
         {slotLabel && (
           <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-muted">{slotLabel}</span>
@@ -91,7 +91,7 @@ export function PlayerTile({
       <button
         type="button"
         onClick={() => onSelect(player)}
-        className={`${base} flex items-center gap-2.5 px-3 py-2 min-h-[44px]`}
+        className={`${base} flex items-center gap-2 px-2.5 py-1.5 min-h-[40px] sm:gap-2.5 sm:px-3 sm:py-2 sm:min-h-[44px]`}
       >
         {slotLabel && (
           <span className="shrink-0 w-6 text-[9px] font-semibold uppercase tracking-wider text-muted">{slotLabel}</span>
@@ -122,7 +122,7 @@ export function PlayerTile({
 
   // pitch (default) – points dominant, name secondary, compact
   return (
-    <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-2 py-2 min-h-[58px] justify-between`}>
+    <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-1.5 py-1.5 min-h-[52px] justify-between sm:px-2 sm:py-2 sm:min-h-[58px]`}>
       <div className="flex items-center justify-between gap-1 min-w-0">
         <p className={`truncate font-medium leading-tight text-white/95 ${nameSizeClass}`} title={player.webName}>
           {displayName}
