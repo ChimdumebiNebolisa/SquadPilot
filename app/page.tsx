@@ -62,7 +62,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4 md:px-6 md:py-6">
+      <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-3 py-3 min-[480px]:gap-4 min-[480px]:px-4 min-[480px]:py-4 md:px-6 md:py-6">
         <SquadTopBar
           hasResults={uiState === "success"}
           nextGw={response?.data.nextGw}
@@ -73,15 +73,15 @@ export default function Home() {
         {uiState === "loading" && <PitchSkeleton />}
 
         {uiState === "error" && errorMessage && (
-          <section className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-sm text-rose-100 sm:p-4">
+          <section className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-sm text-rose-100 leading-snug min-[480px]:p-5">
             {errorMessage}
           </section>
         )}
 
         {uiState === "idle" && (
-          <section className="premium-panel rounded-card border border-dashed border-border p-4 sm:p-5">
-            <h2 className="text-base font-semibold sm:text-lg">Ready to Generate</h2>
-            <p className="mt-1 text-sm text-muted">
+          <section className="premium-panel rounded-card border border-dashed border-border p-4 min-[480px]:p-5">
+            <h2 className="text-base font-semibold min-[480px]:text-lg">Ready to Generate</h2>
+            <p className="mt-1.5 text-sm text-muted leading-snug">
               Generate next-GW recommendation to view pitch, bench, and rationale.
             </p>
           </section>

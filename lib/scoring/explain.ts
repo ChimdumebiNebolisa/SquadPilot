@@ -55,11 +55,23 @@ function topContributors(contributions: FactorContribution[], direction: "positi
   return sorted.slice(0, count);
 }
 
-/** Downside factor = where this player is weakest (lowest value). Skip factors that are 0 or near-0 so we don't pick setPiece/historicalVsOpponent for everyone. */
+/** Factors that vary per player (not team-level like fixture/home/opponent). Use these so downsides differ across the squad. */
+const PLAYER_SPECIFIC_FACTORS: ReadonlySet<FactorContribution["factor"]> = new Set([
+  "recentForm",
+  "pointsPerGame",
+  "expectedMinutes",
+  "value",
+  "differential",
+  "health",
+]);
+
+/** Downside factor = this player's weakest dimension among player-specific factors (lowest value). Skips team-level and zero-value factors. */
 function worstDownsideFactor(contributions: FactorContribution[]): FactorContribution["factor"] {
-  const withValue = contributions.filter((c) => c.value > 0.05);
-  if (withValue.length === 0) return "fixtureDifficulty";
-  const byValue = [...withValue].sort((a, b) => a.value - b.value);
+  const candidate = contributions.filter(
+    (c) => PLAYER_SPECIFIC_FACTORS.has(c.factor) && c.value > 0.05,
+  );
+  if (candidate.length === 0) return "expectedMinutes";
+  const byValue = [...candidate].sort((a, b) => a.value - b.value);
   return byValue[0]!.factor;
 }
 

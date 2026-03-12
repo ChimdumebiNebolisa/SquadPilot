@@ -24,8 +24,8 @@ export function RecommendedListView({
 }: RecommendedListViewProps) {
   return (
     <section className="rounded-2xl border border-border/50 overflow-hidden bg-panel/40">
-      <div className="border-b border-border/40 bg-panel/60 px-2.5 py-1.5 sm:px-3 sm:py-2">
-        <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted">Starting XI</h2>
+      <div className="border-b border-border/40 bg-panel/60 px-3 py-2 min-[480px]:px-4 min-[480px]:py-2.5">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted leading-snug">Starting XI</h2>
       </div>
       <div className="divide-y divide-border/30">
         {startingXI.map((player) => (
@@ -42,10 +42,10 @@ export function RecommendedListView({
         ))}
       </div>
 
-      <div className="border-t border-border/50 bg-panel/30 px-2.5 py-1.5 sm:px-3 sm:py-2">
-        <h2 className="text-[10px] font-semibold uppercase tracking-wider text-muted">Bench</h2>
+      <div className="border-t border-border/50 bg-panel/30 px-3 py-2 min-[480px]:px-4 min-[480px]:py-2.5">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted leading-snug">Bench</h2>
       </div>
-      <div className="grid gap-1 border-t border-border/30 p-1.5 sm:grid-cols-2 sm:gap-1.5 sm:p-2">
+      <div className="grid gap-2 border-t border-border/30 p-2 min-[480px]:grid-cols-2 min-[480px]:gap-2.5 min-[480px]:p-3">
         {bench.map((player, index) => (
           <PlayerTile
             key={player.id}

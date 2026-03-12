@@ -147,25 +147,24 @@ body {
   opacity: 0.7;
 }
 
-@media (max-width: 400px) {
+/* Mobile-only: apply only on narrow viewports (< 400px). */
+@media (max-width: 399px) {
   .perspective-pitch-surface {
     transform: rotateX(2.5deg);
   }
-}
 
-@media (max-width: 480px) {
   .perspective-pitch-wrapper {
     --pitch-tile-width: 74px;
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 359px) {
   .perspective-pitch-wrapper {
     --pitch-tile-width: 68px;
   }
 }
 
-@media (max-width: 360px) {
+@media (max-width: 319px) {
   .perspective-pitch-wrapper {
     --pitch-tile-width: 62px;
   }

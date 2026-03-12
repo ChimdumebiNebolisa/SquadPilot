@@ -58,43 +58,43 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
         aria-label="Player details"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 justify-center pt-1.5 pb-0 sm:pt-2">
+        <div className="flex shrink-0 justify-center pt-1.5 pb-0 min-[480px]:pt-2">
           <span className="h-0.5 w-8 rounded-full bg-muted/30" aria-hidden />
         </div>
-        <div className="overflow-y-auto px-3 pb-4 pt-1.5 sm:px-4 sm:pb-5 sm:pt-2">
+        <div className="overflow-y-auto px-4 pb-5 pt-2 min-[480px]:px-5 min-[480px]:pb-6 min-[480px]:pt-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <div className="min-w-0">
-              <h3 className="truncate text-sm font-semibold tracking-tight text-white sm:text-base">{player.webName}</h3>
-              <p className="mt-0.5 text-[10px] uppercase tracking-wider text-muted">
+              <h3 className="truncate text-sm font-semibold tracking-tight text-white min-[480px]:text-base leading-snug">{player.webName}</h3>
+              <p className="mt-1 text-[11px] leading-snug uppercase tracking-wider text-muted">
                 {club} · {player.position}
               </p>
             </div>
-            <span className="shrink-0 text-xl font-bold tabular-nums leading-none text-brand sm:text-2xl">
+            <span className="shrink-0 text-xl font-bold tabular-nums leading-none text-brand min-[480px]:text-2xl">
               {player.projectedPoints.toFixed(1)} pts
             </span>
           </div>
 
-          <dl className="mt-2 space-y-1 text-[11px] sm:mt-3 sm:space-y-1.5">
+          <dl className="mt-3 space-y-2 text-[11px] leading-snug min-[480px]:mt-4 min-[480px]:space-y-2.5">
             <div className="flex justify-between gap-2">
-              <dt className="uppercase tracking-wider text-muted"><span className="sm:hidden">Exp. mins</span><span className="hidden sm:inline">Expected minutes</span></dt>
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">Exp. mins</span><span className="hidden min-[480px]:inline">Expected minutes</span></dt>
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{expectedMins}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="uppercase tracking-wider text-muted"><span className="sm:hidden">Fixture diff.</span><span className="hidden sm:inline">Fixture difficulty</span></dt>
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">Fixture diff.</span><span className="hidden min-[480px]:inline">Fixture difficulty</span></dt>
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{fixtureDiff}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="uppercase tracking-wider text-muted"><span className="sm:hidden">5+ pts %</span><span className="hidden sm:inline">5+ points chance</span></dt>
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">5+ pts %</span><span className="hidden min-[480px]:inline">5+ points chance</span></dt>
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{fivePlusChance}%</dd>
             </div>
           </dl>
 
-          <p className="mt-2 text-[10px] text-muted sm:mt-2.5">
+          <p className="mt-2.5 text-[11px] leading-snug text-muted min-[480px]:mt-3">
             1 = easy, 5 = hard.
           </p>
 
           {(player.explanation.whyPicked || player.explanation.mainRisk) && (
-            <div className="mt-2 space-y-0.5 text-[11px] leading-snug text-muted sm:mt-3 sm:space-y-1">
+            <div className="mt-3 space-y-1 text-[11px] leading-relaxed text-muted min-[480px]:mt-4 min-[480px]:space-y-1.5">
               {player.explanation.whyPicked && (
                 <p><span className="font-medium text-muted-foreground">Why:</span> {player.explanation.whyPicked}</p>
               )}

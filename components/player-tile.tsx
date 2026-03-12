@@ -19,7 +19,7 @@ function formatDisplayName(webName: string, variant: "pitch" | "bench" | "list")
   const raw = webName.trim();
   const parts = raw.split(/\s+/);
   const maxLen = variant === "pitch" ? 9 : variant === "list" ? 18 : 11;
-  const nameClass = variant === "pitch" ? "text-[9px] sm:text-[10px]" : "text-[10px] sm:text-[11px]";
+  const nameClass = variant === "pitch" ? "text-[10px] leading-snug min-[480px]:text-[11px]" : "text-[11px] leading-snug min-[480px]:text-xs";
   if (parts.length <= 1) {
     const text = raw.length > maxLen ? raw.slice(0, maxLen - 1) + "·" : raw;
     return { text, className: nameClass };
@@ -70,16 +70,16 @@ export function PlayerTile({
       <button
         type="button"
         onClick={() => onSelect(player)}
-        className={`${base} flex items-center gap-1.5 px-1.5 py-1 min-h-[36px] sm:gap-2 sm:px-2 sm:py-1.5 sm:min-h-[40px]`}
+        className={`${base} flex items-center gap-2 px-2 py-1.5 min-h-[40px] min-[480px]:gap-2.5 min-[480px]:px-2.5 min-[480px]:py-2 min-[480px]:min-h-[44px]`}
       >
         {slotLabel && (
-          <span className="shrink-0 text-[9px] font-semibold uppercase tracking-wider text-muted">{slotLabel}</span>
+          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted">{slotLabel}</span>
         )}
         <div className="min-w-0 flex-1 text-left">
-          <p className={`truncate font-medium leading-tight text-white/95 ${nameSizeClass}`} title={player.webName}>
+          <p className={`truncate font-medium text-white/95 ${nameSizeClass}`} title={player.webName}>
             {displayName}
           </p>
-          <p className="text-[9px] uppercase tracking-wider text-muted">{club}</p>
+          <p className="text-[10px] leading-snug uppercase tracking-wider text-muted">{club}</p>
         </div>
         <span className="shrink-0 text-sm font-bold tabular-nums text-brand">{player.projectedPoints.toFixed(1)}</span>
       </button>
@@ -91,7 +91,7 @@ export function PlayerTile({
       <button
         type="button"
         onClick={() => onSelect(player)}
-        className={`${base} flex items-center gap-2 px-2.5 py-1.5 min-h-[40px] sm:gap-2.5 sm:px-3 sm:py-2 sm:min-h-[44px]`}
+        className={`${base} flex items-center gap-2.5 px-3 py-2 min-h-[44px] min-[480px]:gap-3 min-[480px]:px-3.5 min-[480px]:py-2.5 min-[480px]:min-h-[48px]`}
       >
         {slotLabel && (
           <span className="shrink-0 w-6 text-[9px] font-semibold uppercase tracking-wider text-muted">{slotLabel}</span>
@@ -111,7 +111,7 @@ export function PlayerTile({
               </span>
             )}
           </div>
-          <p className="text-[9px] uppercase tracking-wider text-muted">{club} · {player.position}</p>
+          <p className="text-[10px] leading-snug uppercase tracking-wider text-muted">{club} · {player.position}</p>
         </div>
         <span className="shrink-0 w-10 text-right text-base font-bold tabular-nums text-brand">
           {player.projectedPoints.toFixed(1)}
@@ -120,16 +120,16 @@ export function PlayerTile({
     );
   }
 
-  // pitch (default) – points dominant, name secondary, compact
+  // pitch (default) – portrait on mobile (height > width), landscape on sm+
   return (
-    <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-1.5 py-1.5 min-h-[52px] justify-between sm:px-2 sm:py-2 sm:min-h-[58px]`}>
+    <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-1.5 py-1.5 min-h-[80px] justify-between min-[480px]:min-h-[58px] min-[480px]:px-2 min-[480px]:py-2`}>
       <div className="flex items-center justify-between gap-1 min-w-0">
         <p className={`truncate font-medium leading-tight text-white/95 ${nameSizeClass}`} title={player.webName}>
           {displayName}
         </p>
         {badge && (
           <span
-            className={`shrink-0 rounded px-1 py-0.5 text-[9px] font-semibold ${
+            className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
               badge === "C" ? "bg-captain/20 text-captain" : "bg-vice/20 text-vice"
             }`}
           >
@@ -137,8 +137,8 @@ export function PlayerTile({
           </span>
         )}
       </div>
-      <div className="flex items-baseline justify-between gap-1">
-        <span className="text-[9px] uppercase tracking-wider text-muted truncate">{club}</span>
+      <div className="flex items-baseline justify-between gap-1.5">
+        <span className="text-[10px] leading-snug uppercase tracking-wider text-muted truncate">{club}</span>
         <span className="text-base font-bold tabular-nums leading-none text-brand">
           {player.projectedPoints.toFixed(1)}
         </span>

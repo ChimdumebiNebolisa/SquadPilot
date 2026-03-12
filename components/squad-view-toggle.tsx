@@ -19,7 +19,7 @@ export function SquadViewToggle({ value, onChange }: SquadViewToggleProps) {
         role="tab"
         aria-selected={value === "pitch"}
         onClick={() => onChange("pitch")}
-        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition sm:px-4 sm:py-2 sm:text-sm ${
+        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition min-[480px]:px-4 min-[480px]:py-2 min-[480px]:text-sm ${
           value === "pitch"
             ? "bg-panel-elevated text-white shadow-sm"
             : "text-muted hover:text-foreground"
@@ -32,7 +32,7 @@ export function SquadViewToggle({ value, onChange }: SquadViewToggleProps) {
         role="tab"
         aria-selected={value === "list"}
         onClick={() => onChange("list")}
-        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition sm:px-4 sm:py-2 sm:text-sm ${
+        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition min-[480px]:px-4 min-[480px]:py-2 min-[480px]:text-sm ${
           value === "list"
             ? "bg-panel-elevated text-white shadow-sm"
             : "text-muted hover:text-foreground"
