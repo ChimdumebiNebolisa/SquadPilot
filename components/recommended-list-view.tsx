@@ -27,7 +27,7 @@ export function RecommendedListView({
       <div className="border-b border-border/40 bg-panel/60 px-3 py-2 min-[480px]:px-4 min-[480px]:py-2.5">
         <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted leading-snug">Starting XI</h2>
       </div>
-      <div className="divide-y divide-border/30">
+      <div className="flex flex-col gap-2 p-2 min-[480px]:gap-2.5 min-[480px]:p-3">
         {startingXI.map((player) => (
           <PlayerTile
             key={player.id}

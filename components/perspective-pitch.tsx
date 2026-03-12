@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type { PlayerView } from "@/lib/recommendation/types";
 import { PlayerTile } from "@/components/player-tile";
 
@@ -68,19 +69,24 @@ export function PerspectivePitch({
         <div className="relative flex flex-col items-center gap-3 min-[480px]:gap-4 md:gap-5 w-full min-w-0">
           {lines.map(({ key, players, scale, opacity }) => {
             const count = Math.max(players.length, 1);
-            const gapPx = 8;
+            // Match gap-3 (12px) used on mobile so width calculation doesn't undercount and cause overflow
+            const gapPx = 12;
             const maxRowWidth = `calc(${count} * var(--pitch-tile-width, 82px) + ${(count - 1) * gapPx}px)`;
             const isMid = key === "MID";
+            const baseStyle: CSSProperties = {
+              transform: scale,
+              margin: "0 auto",
+            };
+            // Don't set width/gridTemplateColumns inline for MID row so CSS .pitch-row--mid can control wrap on mobile
+            if (!isMid) {
+              baseStyle.width = `min(100%, ${maxRowWidth})`;
+              baseStyle.gridTemplateColumns = `repeat(${count}, minmax(0, var(--pitch-tile-width, 82px)))`;
+            }
             return (
             <div
               key={key}
               className={`grid w-full min-w-0 justify-center gap-3 min-[480px]:gap-2 md:gap-2.5 ${opacity} ${isMid ? "pitch-row--mid" : ""}`}
-              style={{
-                transform: scale,
-                width: `min(100%, ${maxRowWidth})`,
-                gridTemplateColumns: `repeat(${count}, minmax(0, var(--pitch-tile-width, 82px)))`,
-                margin: "0 auto",
-              }}
+              style={baseStyle}
             >
               {players.map((player) => (
                 <PlayerTile

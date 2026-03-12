@@ -157,11 +157,18 @@ body {
   }
 }
 
-/* Midfield row: wrap to 3+2 on narrow screens so tiles get more width */
+/* Midfield row: wrap to 3+2 on narrow screens (no inline width/columns so this can apply) */
 @media (max-width: 479px) {
   .pitch-row--mid {
-    width: 100% !important;
-    grid-template-columns: repeat(3, minmax(0, var(--pitch-tile-width, 82px))) !important;
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, var(--pitch-tile-width, 82px)));
+  }
+}
+
+@media (min-width: 480px) {
+  .pitch-row--mid {
+    width: min(100%, calc(5 * var(--pitch-tile-width, 82px) + 4 * 8px));
+    grid-template-columns: repeat(5, minmax(0, var(--pitch-tile-width, 82px)));
   }
 }
 
