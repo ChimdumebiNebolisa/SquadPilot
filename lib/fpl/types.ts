@@ -15,6 +15,8 @@ export interface NormalizedPlayer {
   epNext: number;
   /** ICT index from API (influence + creativity + threat); used for attacking upside. */
   ictIndex: number;
+  /** Total minutes played this season (from API). Used for expected minutes projection. */
+  minutesPlayedSeason: number;
 }
 
 export interface NormalizedTeam {

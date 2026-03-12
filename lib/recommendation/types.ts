@@ -15,6 +15,8 @@ export interface PlayerView {
   price: number;
   projectedPoints: number;
   chanceOfFivePlusPoints: number;
+  /** Deterministic % chance of starting next GW (0–100). */
+  chanceOfStarting: number;
   chanceOfPlayingNextRound: number | null;
   status: string;
   explanation: {

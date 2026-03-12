@@ -76,6 +76,10 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
 
           <dl className="mt-3 space-y-2 text-[11px] leading-snug min-[480px]:mt-4 min-[480px]:space-y-2.5">
             <div className="flex justify-between gap-2">
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">% start</span><span className="hidden min-[480px]:inline">% chance of starting</span></dt>
+              <dd className="shrink-0 font-medium tabular-nums text-foreground">{player.chanceOfStarting != null ? `${player.chanceOfStarting}%` : "—"}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
               <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">Exp. mins</span><span className="hidden min-[480px]:inline">Expected minutes</span></dt>
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{expectedMins}</dd>
             </div>

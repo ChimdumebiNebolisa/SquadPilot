@@ -37,6 +37,7 @@ export function extractFeaturesForPlayer(
   player: NormalizedPlayer,
   teams: NormalizedTeam[],
   fixtures: NormalizedFixture[],
+  gameweeksPlayed: number,
 ): PlayerFeatureVector {
   const fixtureContext = getFixtureContext(player, fixtures);
   const opponent = teams.find((team) => team.id === fixtureContext.opponentTeamId);
@@ -44,12 +45,25 @@ export function extractFeaturesForPlayer(
   const recentForm = normalizeRange(player.form, 0, 10);
   const pointsPerGame = normalizeRange(player.pointsPerGame, 0, 10);
 
-  // When chance is null: GK gets 0.85 (only one starter, rarely in injury news); outfield gets 0.65 (rotation/unknown).
-  // Avoids handing all "no news" players the same high prior that systematically favored GKs.
-  const defaultMinutesWhenNull = player.position === "GK" ? 0.85 : 0.65;
-  const minutesBase =
-    player.chanceOfPlayingNextRound === null ? defaultMinutesWhenNull : clamp(player.chanceOfPlayingNextRound / 100);
-  const expectedMinutes = player.status === "i" || player.status === "s" ? minutesBase * 0.4 : minutesBase;
+  // Expected minutes (0–1): blend FPL chance-of-playing with historical minutes per game.
+  // History: avg fraction of 90 mins this season = minutesPlayedSeason / (gameweeksPlayed * 90), capped at 1.
+  const defaultChanceWhenNull = player.position === "GK" ? 0.85 : 0.65;
+  const chanceToPlay =
+    player.chanceOfPlayingNextRound !== null
+      ? clamp(player.chanceOfPlayingNextRound / 100)
+      : defaultChanceWhenNull;
+
+  const hasHistory = gameweeksPlayed > 0;
+  const avgMinutesFraction = hasHistory
+    ? clamp(player.minutesPlayedSeason / (gameweeksPlayed * 90))
+    : 1;
+
+  // expectedMinutes = P(plays) * expected fraction of 90 when they play (from history, or 1 if no history).
+  let expectedMinutes = chanceToPlay * avgMinutesFraction;
+  if (player.status === "i" || player.status === "s") {
+    expectedMinutes *= 0.4;
+  }
+  expectedMinutes = clamp(expectedMinutes);
 
   const fixtureDifficulty = clamp((5 - fixtureContext.difficulty) / 4);
   const homeAway = fixtureContext.isHome === null ? 0.5 : fixtureContext.isHome ? 1 : 0;

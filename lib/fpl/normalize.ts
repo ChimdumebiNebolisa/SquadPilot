@@ -43,6 +43,20 @@ function mapElementTypeToPosition(elementType: number): PlayerPosition {
   return "FWD";
 }
 
+/** Number of gameweeks that have finished so far this season (for historical minutes projection). */
+export function resolveGameweeksPlayed(bootstrapRaw: unknown): number {
+  if (typeof bootstrapRaw !== "object" || bootstrapRaw === null) {
+    return 1;
+  }
+  const payload = bootstrapRaw as { events?: unknown[] };
+  const events = Array.isArray(payload.events) ? payload.events : [];
+  return events.filter((event) => {
+    if (typeof event !== "object" || event === null) return false;
+    const e = event as { finished?: unknown };
+    return e.finished === true;
+  }).length;
+}
+
 export function resolveNextGameweek(bootstrapRaw: unknown): number {
   if (typeof bootstrapRaw !== "object" || bootstrapRaw === null) {
     throw new Error("Invalid bootstrap payload");
@@ -117,6 +131,7 @@ export function normalizeBootstrap(
         chanceOfPlayingNextRound: toNullableNumber(player.chance_of_playing_next_round),
         epNext: toNumber(player.ep_next, 0),
         ictIndex: toNumber(player.ict_index, 0),
+        minutesPlayedSeason: toNumber(player.minutes, 0),
       };
     })
     .filter((player) => player.id > 0 && player.teamId > 0);

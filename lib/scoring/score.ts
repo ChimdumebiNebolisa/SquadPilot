@@ -1,4 +1,5 @@
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam } from "@/lib/fpl/types";
+import { computeChanceOfStarting } from "@/lib/scoring/chance-of-starting";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
 import { chanceOfFivePlusPoints } from "@/lib/scoring/probability";
@@ -26,10 +27,11 @@ export function scorePlayers(
   players: NormalizedPlayer[],
   teams: NormalizedTeam[],
   fixtures: NormalizedFixture[],
+  gameweeksPlayed: number,
 ): ProjectedPlayer[] {
   return players
     .map((player) => {
-      const features = extractFeaturesForPlayer(player, teams, fixtures);
+      const features = extractFeaturesForPlayer(player, teams, fixtures, gameweeksPlayed);
       const weights = getWeightsForPosition(player.position);
       const contributions = toContributions(features, weights);
       const projectedScore = contributions.reduce((sum, entry) => sum + entry.contribution, 0);
@@ -41,6 +43,7 @@ export function scorePlayers(
         projectedScore,
         projectedPoints,
         chanceOfFivePlusPoints: chance,
+        chanceOfStarting: computeChanceOfStarting(player, gameweeksPlayed),
         contributions,
         explanation: buildPlayerExplanation({
           position: player.position,

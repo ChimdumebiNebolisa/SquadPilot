@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { FplHttpError, fetchBootstrapStatic, fetchFixturesForEvent } from "@/lib/fpl/fetchers";
-import { normalizeBootstrap, normalizeFixtures, resolveNextGameweek } from "@/lib/fpl/normalize";
+import { normalizeBootstrap, normalizeFixtures, resolveGameweeksPlayed, resolveNextGameweek } from "@/lib/fpl/normalize";
 import { scorePlayers } from "@/lib/scoring/score";
 import { SCORING_WEIGHTS_VERSION } from "@/lib/scoring/weights";
 import { buildRecommendation } from "@/lib/solver/recommend";
@@ -34,8 +34,9 @@ export async function POST(request: Request) {
     const fixturesRaw = await fetchFixturesForEvent(nextGw);
 
     const { players, teams } = normalizeBootstrap(bootstrapRaw);
+    const gameweeksPlayed = resolveGameweeksPlayed(bootstrapRaw);
     const fixtures = normalizeFixtures(fixturesRaw);
-    const projectedPlayers = scorePlayers(players, teams, fixtures);
+    const projectedPlayers = scorePlayers(players, teams, fixtures, gameweeksPlayed);
     const recommendation = buildRecommendation(projectedPlayers);
 
     return NextResponse.json({

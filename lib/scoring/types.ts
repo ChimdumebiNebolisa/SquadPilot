@@ -54,6 +54,8 @@ export interface ProjectedPlayer extends NormalizedPlayer {
   projectedScore: number;
   projectedPoints: number;
   chanceOfFivePlusPoints: number;
+  /** Deterministic % chance of starting next GW (0–100), from availability + minutes history. */
+  chanceOfStarting: number;
   contributions: FactorContribution[];
   explanation: PlayerExplanation;
 }
