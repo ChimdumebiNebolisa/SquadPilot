@@ -18,7 +18,8 @@ export interface PlayerTileProps {
 function formatDisplayName(webName: string, variant: "pitch" | "bench" | "list"): { text: string; className: string } {
   const raw = webName.trim();
   const parts = raw.split(/\s+/);
-  const maxLen = variant === "pitch" ? 10 : variant === "list" ? 18 : 12;
+  /* Pitch: allow up to 12 chars so two-line wrap shows more; list/bench unchanged */
+  const maxLen = variant === "pitch" ? 12 : variant === "list" ? 18 : 12;
   const nameClass = variant === "pitch" ? "text-[10px] leading-snug min-[480px]:text-[11px]" : "text-[11px] leading-snug min-[480px]:text-xs";
   if (parts.length <= 1) {
     const text = raw.length > maxLen ? raw.slice(0, maxLen - 1) + "·" : raw;
@@ -120,11 +121,11 @@ export function PlayerTile({
     );
   }
 
-  // pitch (default) – portrait on mobile (height > width), landscape on sm+
+  // pitch (default) – portrait on mobile (height > width), landscape on sm+; two-line name to reduce cramping
   return (
     <button type="button" onClick={() => onSelect(player)} className={`${base} flex flex-col px-1.5 py-1.5 min-h-[80px] justify-between min-[480px]:min-h-[58px] min-[480px]:px-2 min-[480px]:py-2`}>
-      <div className="flex items-center justify-between gap-1 min-w-0">
-        <p className={`truncate font-medium leading-tight text-white/95 ${nameSizeClass}`} title={player.webName}>
+      <div className="flex items-start justify-between gap-1 min-w-0">
+        <p className={`min-w-0 font-medium leading-tight text-white/95 line-clamp-2 ${nameSizeClass}`} title={player.webName}>
           {displayName}
         </p>
         {badge && (

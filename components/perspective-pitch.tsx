@@ -65,14 +65,20 @@ export function PerspectivePitch({
           aria-hidden
         />
 
-        <div className="relative flex flex-col items-center gap-3 min-[480px]:gap-4 md:gap-5">
-          {lines.map(({ key, players, scale, opacity }) => (
+        <div className="relative flex flex-col items-center gap-3 min-[480px]:gap-4 md:gap-5 w-full min-w-0">
+          {lines.map(({ key, players, scale, opacity }) => {
+            const count = Math.max(players.length, 1);
+            const gapPx = 8;
+            const maxRowWidth = `calc(${count} * var(--pitch-tile-width, 82px) + ${(count - 1) * gapPx}px)`;
+            const isMid = key === "MID";
+            return (
             <div
               key={key}
-              className={`grid w-full justify-center gap-2 min-[480px]:gap-2 md:gap-2.5 ${opacity}`}
+              className={`grid w-full min-w-0 justify-center gap-3 min-[480px]:gap-2 md:gap-2.5 ${opacity} ${isMid ? "pitch-row--mid" : ""}`}
               style={{
                 transform: scale,
-                gridTemplateColumns: `repeat(${Math.max(players.length, 1)}, var(--pitch-tile-width, 82px))`,
+                width: `min(100%, ${maxRowWidth})`,
+                gridTemplateColumns: `repeat(${count}, minmax(0, var(--pitch-tile-width, 82px)))`,
                 margin: "0 auto",
               }}
             >
@@ -94,7 +100,8 @@ export function PerspectivePitch({
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

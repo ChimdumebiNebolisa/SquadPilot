@@ -147,26 +147,21 @@ body {
   opacity: 0.7;
 }
 
-/* Mobile-only: apply only on narrow viewports (< 400px). */
-@media (max-width: 399px) {
+/* Mobile: gentler perspective, horizontal scroll if needed, keep tile width readable */
+@media (max-width: 479px) {
   .perspective-pitch-surface {
     transform: rotateX(2.5deg);
-  }
-
-  .perspective-pitch-wrapper {
-    --pitch-tile-width: 74px;
-  }
-}
-
-@media (max-width: 359px) {
-  .perspective-pitch-wrapper {
-    --pitch-tile-width: 68px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
-@media (max-width: 319px) {
-  .perspective-pitch-wrapper {
-    --pitch-tile-width: 68px;
+/* Midfield row: wrap to 3+2 on narrow screens so tiles get more width */
+@media (max-width: 479px) {
+  .pitch-row--mid {
+    width: 100% !important;
+    grid-template-columns: repeat(3, minmax(0, var(--pitch-tile-width, 82px))) !important;
   }
 }
 
