@@ -3,7 +3,7 @@ import type { ScoringWeights } from "@/lib/scoring/types";
 
 /** Base weights; position overrides applied in getWeightsForPosition. */
 const BASE_WEIGHTS: ScoringWeights = {
-  version: "v1.1.0",
+  version: "v1.2.0",
   recentForm: 0.14,
   pointsPerGame: 0.18,
   expectedMinutes: 0.14,
@@ -75,4 +75,4 @@ export function getWeightsForPosition(position: PlayerPosition): ScoringWeights 
 }
 
 /** Weights version string for API response. */
-export const SCORING_WEIGHTS_VERSION = "v1.1.0";
+export const SCORING_WEIGHTS_VERSION = "v1.2.0";
