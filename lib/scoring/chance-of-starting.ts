@@ -2,7 +2,9 @@ import type { NormalizedPlayer } from "@/lib/fpl/types";
 
 /**
  * Deterministic % chance of starting (0–100).
- * Uses: FPL availability (chance_of_playing_next_round, status) and season minutes history.
+ * Uses: FPL availability (chance_of_playing_next_round, status) and actual
+ * starts this season. Minutes alone cannot distinguish starts from substitute
+ * appearances, so it should not be used as a start-rate proxy.
  */
 export function computeChanceOfStarting(
   player: NormalizedPlayer,
@@ -14,10 +16,10 @@ export function computeChanceOfStarting(
       ? Math.max(0, Math.min(1, player.chanceOfPlayingNextRound / 100))
       : availabilityFromStatus(player.status);
 
-  // 2. Historical start rate (0–1): when available, how often they get “starter” minutes
+  // 2. Historical start rate (0–1): actual starts per completed gameweek.
   const startRate =
     gameweeksPlayed > 0
-      ? Math.min(1, player.minutesPlayedSeason / (gameweeksPlayed * 90))
+      ? Math.min(1, player.startsThisSeason / gameweeksPlayed)
       : priorStartRate(player.position);
 
   // 3. P(start) ≈ P(available) × P(starts when available)
