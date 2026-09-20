@@ -17,6 +17,8 @@ export interface NormalizedPlayer {
   ictIndex: number;
   /** Total minutes played this season (from API). Used for expected minutes projection. */
   minutesPlayedSeason: number;
+  /** Number of matches started this season (from API). Used for start probability. */
+  startsThisSeason: number;
 }
 
 export interface NormalizedTeam {
