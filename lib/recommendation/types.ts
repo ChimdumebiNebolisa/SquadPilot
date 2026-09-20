@@ -14,6 +14,7 @@ export interface PlayerView {
   position: Position;
   price: number;
   projectedPoints: number;
+  /** Bounded heuristic estimate, not a calibrated probability. */
   chanceOfFivePlusPoints: number;
   /** Deterministic % chance of starting next GW (0–100). */
   chanceOfStarting: number;
