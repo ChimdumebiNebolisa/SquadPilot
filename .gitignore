@@ -44,5 +44,8 @@ next-env.d.ts
 /docs/*
 !/docs/backtesting.md
 
-# locally imported Vaastav snapshots
+# Versioned normalized historical snapshots are compressed and checked in.
+# Keep ad-hoc plain JSON imports local so they cannot silently become the runtime dataset.
 /data/historical/*.json
+/data/historical/*.json.gz
+!/data/historical/*.json.gz

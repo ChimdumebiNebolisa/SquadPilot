@@ -25,7 +25,7 @@ npm run build
 All live requests are server-side and cached in memory with retry, stale-cache fallback, and sync metadata.
 
 - **FPL public API** is live truth for current players, prices, points, form, minutes, starts, availability, news, chance-of-playing fields, expected goals/assists where supplied, FPL `ep_next`, set-piece order, team strengths, fixtures, home/away status, double gameweeks, and optional Team ID data.
-- **Vaastav’s Fantasy Premier League repository** is historical evidence only. Run `node scripts/sync-vaastav.mjs --season 2024-25` to import a season into `data/historical/`. The app does not fetch those CSV files during a user request.
+- **Vaastav’s Fantasy Premier League repository** is historical evidence only. The repository ships with compressed normalized snapshots for 2024-25 and 2025-26 under `data/historical/`; the app does not fetch those CSV files during a user request. Add another pinned season with `npm run sync:historical -- --season YYYY-YY` and commit the resulting `.json.gz` file.
 
 Every normalized record carries source, season, gameweek or fixture, as-of time, confidence, and availability status. Historical player joins prefer FPL element IDs; fallback identity matching is explicit and low-confidence. Missing historical data is displayed as “insufficient historical data”.
 
@@ -54,9 +54,9 @@ Enter an FPL Team ID before generating. SquadPilot then attempts to load the cur
 
 ## Historical import and backtesting
 
-The reproducible importer is `scripts/sync-vaastav.mjs`. It downloads the allowed Vaastav files, normalizes gameweek records, and writes JSON under `data/historical/` for the application to read.
+The reproducible importer is `scripts/sync-vaastav.mjs`. It downloads the allowed Vaastav files, normalizes gameweek records, and writes a compressed versioned snapshot under `data/historical/` for the application to read. `npm run build` verifies that at least one non-empty historical snapshot is present, so a deployment cannot silently ship without the historical layer.
 
-The walk-forward path is documented in [`docs/backtesting.md`](docs/backtesting.md). It only exposes records with gameweek earlier than the evaluated deadline, excludes post-match expected-point fields, and reports projection error, rank correlation, captain hit rate, start-estimate calibration, position and double-gameweek slices, recent-form comparison, and FPL `ep_next` comparison.
+The walk-forward path is documented in [`docs/backtesting.md`](docs/backtesting.md). It only exposes records with gameweek earlier than the evaluated deadline, excludes post-match expected-point fields, and reports projection error, rank correlation, captain hit rate, start-estimate calibration, position and double-gameweek slices, recent-form comparison, plus an explicit availability result for the FPL `ep_next` comparator.
 
 ## Attribution
 

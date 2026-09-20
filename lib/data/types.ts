@@ -35,6 +35,7 @@ export interface PlayerMatchPerformance {
 export interface PlayerSeasonAggregate {
   source: DataProvenance;
   playerId: number;
+  playerName: string | null;
   season: string;
   matches: number;
   starts: number;
@@ -50,6 +51,7 @@ export interface PlayerSeasonAggregate {
 export interface PlayerOpponentAggregate {
   source: DataProvenance;
   playerId: number;
+  playerName: string | null;
   opponentTeamId: number;
   matches: number;
   starts: number;

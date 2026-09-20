@@ -39,24 +39,33 @@ async function loadCurrentTeam(teamId: number, nextGw: number) {
   return { team, picksError: picksResult.status === "rejected", historyError: historyResult.status === "rejected" };
 }
 
-async function loadCurrentSeasonHistory(playerIds: number[]): Promise<Map<number, OpponentHistoryView[]>> {
-  const result = new Map<number, OpponentHistoryView[]>();
+async function loadCurrentSeasonHistory(playerIds: number[]): Promise<{
+  opponentHistory: Map<number, OpponentHistoryView[]>;
+  previousSeasonBaseline: Map<number, number | null>;
+}> {
+  const opponentHistory = new Map<number, OpponentHistoryView[]>();
+  const previousSeasonBaseline = new Map<number, number | null>();
   const summaries = await Promise.allSettled(playerIds.map((playerId) => fetchElementSummary(playerId)));
   summaries.forEach((summary, index) => {
     if (summary.status !== "fulfilled") return;
     const playerId = playerIds[index];
     if (!playerId) return;
     const normalized = normalizeFplElementSummary(playerId, summary.value);
-    result.set(playerId, normalized.opponentAggregates.map((record) => ({ ...record, baselinePointsPer90: null })));
+    opponentHistory.set(playerId, normalized.opponentAggregates.map((record) => ({ ...record, baselinePointsPer90: null })));
+    const past = normalized.seasonAggregates
+      .filter((aggregate) => aggregate.season !== "current" && aggregate.pointsPer90 > 0)
+      .sort((left, right) => right.season.localeCompare(left.season))[0];
+    if (past) previousSeasonBaseline.set(playerId, past.pointsPer90);
   });
-  return result;
+  return { opponentHistory, previousSeasonBaseline };
 }
 
 function buildUserTeamView(
-  currentTeam: Awaited<ReturnType<typeof loadCurrentTeam>>["team"],
+  currentTeamResult: Awaited<ReturnType<typeof loadCurrentTeam>>,
   projectedPlayers: ProjectedPlayer[],
   recommendation: NonNullable<ReturnType<typeof buildRecommendation>>,
 ) {
+  const currentTeam = currentTeamResult.team;
   const byId = new Map(projectedPlayers.map((player) => [player.id, player]));
   const currentPlayers = currentTeam.squad
     .map((pick) => byId.get(pick.playerId))
@@ -68,12 +77,21 @@ function buildUserTeamView(
     .sort((a, b) => b.projectedPoints - a.projectedPoints)[0] ?? null;
   const currentIds = new Set(currentPlayers.map((player) => player.id));
   const recommendedIds = new Set(recommendation.squad.map((player) => player.id));
+  const comparisonAvailable = currentTeam.picksAvailable && !currentTeamResult.picksError;
   const captainPick = currentTeam.squad.find((pick) => pick.isCaptain)?.playerId ?? null;
   const vicePick = currentTeam.squad.find((pick) => pick.isViceCaptain)?.playerId ?? null;
 
   return {
     teamId: currentTeam.teamId,
     teamName: currentTeam.teamName,
+    dataStatus: currentTeamResult.picksError || currentTeamResult.historyError || !currentTeam.picksAvailable ? "partial" as const : "available" as const,
+    dataWarnings: [
+      ...(currentTeamResult.picksError ? ["Current squad picks could not be loaded from FPL."] : []),
+      ...(currentTeamResult.historyError ? ["Team history could not be loaded from FPL."] : []),
+      ...(!currentTeam.picksAvailable && !currentTeamResult.picksError ? ["FPL returned no squad picks for this Team ID."] : []),
+    ],
+    historyAvailable: currentTeam.historyAvailable,
+    picksAvailable: currentTeam.picksAvailable,
     currentPlayers: currentPlayers.map((player) => ({
       playerId: player.id,
       webName: player.webName,
@@ -98,8 +116,8 @@ function buildUserTeamView(
         reason: player.fixtureCount === 0 ? "fixture data incomplete" : `start estimate ${player.chanceOfStarting}%`,
       })),
     comparison: {
-      added: [...recommendedIds].filter((id) => !currentIds.has(id)),
-      dropped: [...currentIds].filter((id) => !recommendedIds.has(id)),
+      added: comparisonAvailable ? [...recommendedIds].filter((id) => !currentIds.has(id)) : [],
+      dropped: comparisonAvailable ? [...currentIds].filter((id) => !recommendedIds.has(id)) : [],
     },
   };
 }
@@ -144,7 +162,8 @@ export async function POST(request: Request) {
     const projectedPlayers = scorePlayers(players, teams, fixtures, gameweeksPlayed, {
       nextGameweek: nextGw,
       historical,
-      currentSeasonOpponentHistory: currentSeasonHistory,
+      currentSeasonOpponentHistory: currentSeasonHistory?.opponentHistory,
+      currentSeasonPreviousSeasonBaseline: currentSeasonHistory?.previousSeasonBaseline,
     });
     const recommendation = buildRecommendation(projectedPlayers);
     if (!recommendation) {
@@ -157,7 +176,7 @@ export async function POST(request: Request) {
     const historicalStatus = getHistoricalAvailability();
     const freshness = getFplSyncStatus();
     const userTeam = currentTeamResult
-      ? buildUserTeamView(currentTeamResult.team, projectedPlayers, recommendation)
+      ? buildUserTeamView(currentTeamResult, projectedPlayers, recommendation)
       : undefined;
 
     return NextResponse.json({

@@ -3,6 +3,7 @@ const BOOTSTRAP_TTL_MS = 1000 * 60 * 15;
 const FIXTURES_TTL_MS = 1000 * 60 * 5;
 const DETAIL_TTL_MS = 1000 * 60 * 15;
 const MAX_RETRIES = 3;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 interface CacheEntry {
   value: unknown;
@@ -61,6 +62,7 @@ async function fetchFplJson<T>(path: string, ttlMs: number, cacheKey = path): Pr
       const response = await fetch(`${FPL_BASE_URL}${path}`, {
         cache: "no-store",
         headers: { Accept: "application/json" },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
 
       if (response.ok) {

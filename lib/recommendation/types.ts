@@ -86,6 +86,10 @@ export interface RecommendData {
   userTeam?: {
     teamId: number;
     teamName: string | null;
+    dataStatus: "available" | "partial";
+    dataWarnings: string[];
+    historyAvailable: boolean;
+    picksAvailable: boolean;
     currentPlayers: Array<{ playerId: number; webName: string; currentPoints: number; projectedPoints: number; chanceOfStarting: number; }>;
     bank: number | null;
     freeTransfers: number | null;

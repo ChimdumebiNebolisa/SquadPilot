@@ -1,9 +1,17 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { gunzip } from "node:zlib";
+import { promisify } from "node:util";
 
 const season = process.argv[process.argv.indexOf("--season") + 1] || "2024-25";
-const file = join(process.cwd(), "data", "historical", `${season}.json`);
-const dataset = JSON.parse(await readFile(file, "utf8"));
+const file = join(process.cwd(), "data", "historical", `${season}.json.gz`);
+const gunzipAsync = promisify(gunzip);
+let dataset;
+try {
+  dataset = JSON.parse((await gunzipAsync(await readFile(file))).toString("utf8"));
+} catch {
+  throw new Error(`Historical snapshot ${season}.json.gz is unavailable. Run npm run sync:historical -- --season ${season}.`);
+}
 const records = dataset.performances || [];
 const rounds = [...new Set(records.map((record) => record.source.gameweek).filter(Number.isFinite))].sort((a, b) => a - b);
 
@@ -28,12 +36,16 @@ function correlation(left, right) {
 }
 
 const errors = [];
+const recentFormErrors = [];
 const projectedRanks = [];
 const actualRanks = [];
+const recentFormRanks = [];
 const captainHits = [];
+const recentFormCaptainHits = [];
 const startBuckets = new Map();
 const positionErrors = new Map();
 const doubleGameweekErrors = [];
+const singleGameweekErrors = [];
 for (const round of rounds) {
   const prior = records.filter((record) => record.source.gameweek < round);
   const current = records.filter((record) => record.source.gameweek === round);
@@ -53,15 +65,33 @@ for (const round of rounds) {
   }
   const rows = [...outcomes.entries()].map(([playerId, outcome]) => {
     const history = (priorByPlayer.get(playerId) || []).slice(-5);
-    return { playerId, outcome, projection: mean(history.map((record) => Number(record.totalPoints) || 0)) || 0, startEstimate: history.length ? mean(history.map((record) => Number(record.starts) > 0 ? 100 : 0)) : 0 };
+    const recentFormPerFixture = mean(history.map((record) => Number(record.totalPoints) || 0)) || 0;
+    const priorMinutes = history.reduce((sum, record) => sum + (Number(record.minutes) || 0), 0);
+    const priorPoints = history.reduce((sum, record) => sum + (Number(record.totalPoints) || 0), 0);
+    const priorFixtures = history.length;
+    const pointsPer90 = priorMinutes > 0 ? (priorPoints / priorMinutes) * 90 : recentFormPerFixture;
+    const expectedMinutes = priorFixtures > 0 ? priorMinutes / priorFixtures : 0;
+    const minutesAdjustedPerFixture = pointsPer90 * expectedMinutes / 90;
+    const deterministicPerFixture = recentFormPerFixture * 0.55 + minutesAdjustedPerFixture * 0.45;
+    return {
+      playerId,
+      outcome,
+      projection: deterministicPerFixture * outcome.fixtures,
+      recentFormProjection: recentFormPerFixture * outcome.fixtures,
+      startEstimate: history.length ? mean(history.map((record) => Number(record.starts) > 0 ? 100 : 0)) : 0,
+    };
   });
   if (!rows.length) continue;
   errors.push(...rows.map((row) => Math.abs(row.projection - row.outcome.points)));
+  recentFormErrors.push(...rows.map((row) => Math.abs(row.recentFormProjection - row.outcome.points)));
   projectedRanks.push(...rank(rows.map((row) => ({ key: row.playerId, value: row.projection }))));
+  recentFormRanks.push(...rank(rows.map((row) => ({ key: row.playerId, value: row.recentFormProjection }))));
   actualRanks.push(...rank(rows.map((row) => ({ key: row.playerId, value: row.outcome.points }))));
   const captain = [...rows].sort((left, right) => right.projection - left.projection)[0];
+  const recentFormCaptain = [...rows].sort((left, right) => right.recentFormProjection - left.recentFormProjection)[0];
   const actualBest = [...rows].sort((left, right) => right.outcome.points - left.outcome.points)[0];
   captainHits.push(captain?.playerId === actualBest?.playerId ? 1 : 0);
+  recentFormCaptainHits.push(recentFormCaptain?.playerId === actualBest?.playerId ? 1 : 0);
   for (const row of rows) {
     const bucket = Math.min(90, Math.floor(row.startEstimate / 10) * 10);
     const item = startBuckets.get(bucket) || { predicted: [], started: [] };
@@ -73,6 +103,7 @@ for (const round of rounds) {
     positionItem.push(Math.abs(row.projection - row.outcome.points));
     positionErrors.set(position, positionItem);
     if (row.outcome.fixtures > 1) doubleGameweekErrors.push(Math.abs(row.projection - row.outcome.points));
+    else singleGameweekErrors.push(Math.abs(row.projection - row.outcome.points));
   }
 }
 
@@ -83,9 +114,14 @@ console.log(JSON.stringify({
   meanAbsoluteProjectionError: mean(errors),
   rankCorrelation: correlation(projectedRanks, actualRanks),
   captainRecommendationHitRate: mean(captainHits),
+  recentFormBaselineMeanAbsoluteProjectionError: mean(recentFormErrors),
+  recentFormBaselineRankCorrelation: correlation(recentFormRanks, actualRanks),
+  recentFormBaselineCaptainRecommendationHitRate: mean(recentFormCaptainHits),
   startingEstimateCalibration: [...startBuckets.entries()].map(([bucket, values]) => ({ bucket, averageEstimate: mean(values.predicted), observedStartRate: mean(values.started), sample: values.started.length })),
   performanceByPosition: Object.fromEntries([...positionErrors.entries()].map(([position, values]) => [position, { meanAbsoluteProjectionError: mean(values), sample: values.length }])),
   doubleGameweekMeanAbsoluteProjectionError: mean(doubleGameweekErrors),
-  recentFormBaseline: "last five historical match points; reported as the projection used by this walk-forward path",
-  fplEpNextComparison: "unavailable in Vaastav match snapshots; ep_next is excluded to avoid post-match leakage",
+  singleGameweekMeanAbsoluteProjectionError: mean(singleGameweekErrors),
+  projection: "55% last-five match-point average plus 45% minutes-adjusted points-per-90, multiplied by the scheduled fixture count; every input is from gameweeks before the evaluated round",
+  recentFormBaseline: "last-five historical match-point average multiplied by the scheduled fixture count",
+  fplEpNextComparison: { status: "unavailable", reason: "The allowed Vaastav snapshots do not contain FPL ep_next. It is excluded rather than reconstructed from post-match fields." },
 }, null, 2));

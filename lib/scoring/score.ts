@@ -12,6 +12,7 @@ export interface ScoreOptions {
   nextGameweek?: number;
   historical?: HistoricalDataset | null;
   currentSeasonOpponentHistory?: Map<number, OpponentHistoryView[]>;
+  currentSeasonPreviousSeasonBaseline?: Map<number, number | null>;
 }
 
 function toContributions(features: PlayerFeatureVector, weights: ScoringWeights): FactorContribution[] {
@@ -35,14 +36,21 @@ function historicalForPlayer(
   const records: OpponentHistoryView[] = fixtures.flatMap((fixture) => {
       const existing = current.find((record) => record.opponentTeamId === fixture.opponentTeamId);
       if (existing) return [{ ...existing, baselinePointsPer90 }];
-      const historicalRecord = lookupOpponentHistory(historical ?? null, player.id, fixture.opponentTeamId, baselinePointsPer90);
+      const historicalRecord = lookupOpponentHistory(historical ?? null, player.id, fixture.opponentTeamId, baselinePointsPer90, `${player.firstName} ${player.lastName}`);
       return historicalRecord ? [{ ...historicalRecord, baselinePointsPer90 }] : [];
     });
   return records;
 }
 
-function previousSeasonPointsPer90(playerId: number, historical: HistoricalDataset | null | undefined): number | null {
-  const aggregates = historical?.seasonAggregates.filter((aggregate) => aggregate.playerId === playerId) ?? [];
+function normalizePlayerName(value: string): string {
+  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function previousSeasonPointsPer90(player: NormalizedPlayer, historical: HistoricalDataset | null | undefined): number | null {
+  const playerName = normalizePlayerName(`${player.firstName} ${player.lastName}`);
+  const aggregates = historical?.seasonAggregates.filter((aggregate) =>
+    aggregate.playerId === player.id || (aggregate.playerName != null && normalizePlayerName(aggregate.playerName) === playerName),
+  ) ?? [];
   return [...aggregates].sort((left, right) => right.season.localeCompare(left.season))[0]?.pointsPer90 ?? null;
 }
 
@@ -61,7 +69,8 @@ export function scorePlayers(
         ? getFixturesForTeamAndEvent(player.teamId, nextGameweek, fixtures)
         : { fixtures: [], fixtureCount: 0, averageDifficulty: null, homeCount: 0, awayCount: 0, status: "missing" as const };
       const opponentHistory = historicalForPlayer(player, fixtureSummary.fixtures, options.historical, options.currentSeasonOpponentHistory);
-      const previousSeasonBaseline = previousSeasonPointsPer90(player.id, options.historical);
+      const previousSeasonBaseline = options.currentSeasonPreviousSeasonBaseline?.get(player.id)
+        ?? previousSeasonPointsPer90(player, options.historical);
       const featureResult = extractFeaturesForPlayer(player, teams, fixtures, {
         nextGameweek,
         gameweeksPlayed,

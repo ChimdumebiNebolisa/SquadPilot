@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "prebuild": "node scripts/verify-historical.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test \"tests/**/*.test.ts\"",
+    "sync:historical": "node scripts/sync-vaastav.mjs",
     "backtest": "node scripts/backtest.mjs"
   },
   "dependencies": {
