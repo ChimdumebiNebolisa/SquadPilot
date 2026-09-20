@@ -43,7 +43,7 @@ function mapElementTypeToPosition(elementType: number): PlayerPosition {
   return "FWD";
 }
 
-/** Number of gameweeks that have finished so far this season (for historical minutes projection). */
+/** Number of gameweeks that have reached full time so far this season (for historical minutes projection). */
 export function resolveGameweeksPlayed(bootstrapRaw: unknown): number {
   if (typeof bootstrapRaw !== "object" || bootstrapRaw === null) {
     return 1;
@@ -52,8 +52,11 @@ export function resolveGameweeksPlayed(bootstrapRaw: unknown): number {
   const events = Array.isArray(payload.events) ? payload.events : [];
   return events.filter((event) => {
     if (typeof event !== "object" || event === null) return false;
-    const e = event as { finished?: unknown };
-    return e.finished === true;
+    const e = event as { finished?: unknown; finished_provisional?: unknown };
+    // FPL marks a full-time gameweek as finished_provisional while bonus and
+    // final points are still being settled. Its minutes and starts should
+    // still count toward availability and role estimates.
+    return e.finished === true || e.finished_provisional === true;
   }).length;
 }
 
@@ -132,6 +135,7 @@ export function normalizeBootstrap(
         epNext: toNumber(player.ep_next, 0),
         ictIndex: toNumber(player.ict_index, 0),
         minutesPlayedSeason: toNumber(player.minutes, 0),
+        startsThisSeason: toNumber(player.starts, 0),
       };
     })
     .filter((player) => player.id > 0 && player.teamId > 0);
