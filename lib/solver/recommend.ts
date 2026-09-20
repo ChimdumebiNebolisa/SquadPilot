@@ -140,13 +140,14 @@ function createMilpRecommendation(players: ProjectedPlayer[]): RecommendationRes
       xiFWDMin: isPosition(player, "FWD") ? 1 : 0,
       xiFWDMax: isPosition(player, "FWD") ? 1 : 0,
       [`link_squad_${player.id}`]: 1,
-      [`link_captain_${player.id}`]: -1,
+      // Captain must be a member of the XI: captain - XI <= 0.
+      [`link_captain_${player.id}`]: 1,
     };
 
     variables[captainVar] = {
       objective: objectiveValue(player),
       captainCount: 1,
-      [`link_captain_${player.id}`]: 1,
+      [`link_captain_${player.id}`]: -1,
     };
 
     constraints[`club_${player.teamId}`] = { max: 3 };
@@ -246,26 +247,119 @@ function pickByPosition(
   return picked;
 }
 
+const VALID_FORMATIONS: ReadonlyArray<readonly [number, number, number]> = [
+  [3, 4, 3],
+  [3, 5, 2],
+  [4, 3, 3],
+  [4, 4, 2],
+  [4, 5, 1],
+  [5, 3, 2],
+  [5, 4, 1],
+];
+
+function squadCost(squad: ProjectedPlayer[]): number {
+  return squad.reduce((sum, player) => sum + player.price, 0);
+}
+
+function canUsePlayer(
+  player: ProjectedPlayer,
+  selectedIds: Set<number>,
+  teamCounts: Map<number, number>,
+): boolean {
+  if (selectedIds.has(player.id)) return false;
+  return (teamCounts.get(player.teamId) ?? 0) < 3;
+}
+
+/** Repair the greedy squad until it satisfies the £100 cap without violating club limits. */
+function repairFallbackBudget(squad: ProjectedPlayer[], players: ProjectedPlayer[]): ProjectedPlayer[] {
+  const selectedIds = new Set(squad.map((player) => player.id));
+  const teamCounts = new Map<number, number>();
+  for (const player of squad) {
+    teamCounts.set(player.teamId, (teamCounts.get(player.teamId) ?? 0) + 1);
+  }
+
+  while (squadCost(squad) > BUDGET_CAP) {
+    let bestSwap:
+      | { outgoingIndex: number; incoming: ProjectedPlayer; savings: number; lossPerSaved: number }
+      | undefined;
+
+    for (let outgoingIndex = 0; outgoingIndex < squad.length; outgoingIndex += 1) {
+      const outgoing = squad[outgoingIndex];
+      const outgoingTeamCount = teamCounts.get(outgoing.teamId) ?? 0;
+
+      for (const incoming of players) {
+        if (incoming.position !== outgoing.position || !canUsePlayer(incoming, selectedIds, teamCounts)) {
+          continue;
+        }
+
+        const savings = outgoing.price - incoming.price;
+        if (savings <= 0) continue;
+
+        const incomingTeamCount = teamCounts.get(incoming.teamId) ?? 0;
+        if (incoming.teamId === outgoing.teamId) {
+          if (incomingTeamCount > outgoingTeamCount) continue;
+        } else if (incomingTeamCount >= 3) {
+          continue;
+        }
+
+        const loss = Math.max(0, outgoing.projectedScore - incoming.projectedScore);
+        const candidate = { outgoingIndex, incoming, savings, lossPerSaved: loss / savings };
+        if (!bestSwap || candidate.lossPerSaved < bestSwap.lossPerSaved) {
+          bestSwap = candidate;
+        }
+      }
+    }
+
+    if (!bestSwap) break;
+
+    const outgoing = squad[bestSwap.outgoingIndex];
+    selectedIds.delete(outgoing.id);
+    selectedIds.add(bestSwap.incoming.id);
+    teamCounts.set(outgoing.teamId, (teamCounts.get(outgoing.teamId) ?? 1) - 1);
+    teamCounts.set(bestSwap.incoming.teamId, (teamCounts.get(bestSwap.incoming.teamId) ?? 0) + 1);
+    squad[bestSwap.outgoingIndex] = bestSwap.incoming;
+  }
+
+  return squad;
+}
+
+function selectBestStartingXI(squad: ProjectedPlayer[]): ProjectedPlayer[] {
+  const byPosition = (position: ProjectedPlayer["position"]) =>
+    squad.filter((player) => player.position === position).sort((a, b) => objectiveValue(b) - objectiveValue(a));
+
+  let best: { xi: ProjectedPlayer[]; objective: number } | undefined;
+  for (const [defenders, midfielders, forwards] of VALID_FORMATIONS) {
+    const xi = [
+      ...byPosition("GK").slice(0, 1),
+      ...byPosition("DEF").slice(0, defenders),
+      ...byPosition("MID").slice(0, midfielders),
+      ...byPosition("FWD").slice(0, forwards),
+    ];
+    if (xi.length !== 11) continue;
+    const objective = xi.reduce((sum, player) => sum + objectiveValue(player), 0);
+    if (!best || objective > best.objective) best = { xi, objective };
+  }
+
+  return best?.xi ?? [];
+}
+
 function fallbackRecommendation(players: ProjectedPlayer[]): RecommendationResult {
   const ordered = [...players].sort((a, b) => b.projectedScore - a.projectedScore);
   const selectedIds = new Set<number>();
   const teamCounts = new Map<number, number>();
 
-  const squad = [
+  const squad = repairFallbackBudget([
     ...pickByPosition(ordered, "GK", 2, selectedIds, teamCounts),
     ...pickByPosition(ordered, "DEF", 5, selectedIds, teamCounts),
     ...pickByPosition(ordered, "MID", 5, selectedIds, teamCounts),
     ...pickByPosition(ordered, "FWD", 3, selectedIds, teamCounts),
-  ];
+  ], players);
 
-  const gk = squad.filter((player) => player.position === "GK").sort((a, b) => b.projectedScore - a.projectedScore);
-  const defs = squad.filter((player) => player.position === "DEF").sort((a, b) => b.projectedScore - a.projectedScore);
-  const mids = squad.filter((player) => player.position === "MID").sort((a, b) => b.projectedScore - a.projectedScore);
-  const fwds = squad.filter((player) => player.position === "FWD").sort((a, b) => b.projectedScore - a.projectedScore);
+  if (squad.length !== 15 || squadCost(squad) > BUDGET_CAP) {
+    throw new Error("Could not build a budget-valid fallback squad");
+  }
 
-  const startingXI = [gk[0], ...defs.slice(0, 3), ...mids.slice(0, 4), ...fwds.slice(0, 3)]
-    .filter(Boolean)
-    .sort((a, b) => b.projectedScore - a.projectedScore);
+  const startingXI = selectBestStartingXI(squad);
 
   const startingIds = new Set(startingXI.map((player) => player.id));
   const bench = squad
@@ -276,8 +370,10 @@ function fallbackRecommendation(players: ProjectedPlayer[]): RecommendationResul
       return b.projectedScore - a.projectedScore;
     });
 
-  const captain = startingXI[0] ?? squad[0];
-  const viceCaptain = startingXI[1] ?? startingXI[0] ?? squad[1] ?? squad[0];
+  const captain = [...startingXI].sort((a, b) => objectiveValue(b) - objectiveValue(a))[0] ?? squad[0];
+  const viceCaptain = [...startingXI]
+    .filter((player) => player.id !== captain?.id)
+    .sort((a, b) => objectiveValue(b) - objectiveValue(a))[0] ?? startingXI[0] ?? squad[1] ?? squad[0];
 
   enforceDistinctSquadInsights(squad);
 
@@ -287,7 +383,7 @@ function fallbackRecommendation(players: ProjectedPlayer[]): RecommendationResul
     bench,
     captain,
     viceCaptain,
-    budgetUsed: Number(squad.reduce((sum, player) => sum + player.price, 0).toFixed(1)),
+    budgetUsed: Number(squadCost(squad).toFixed(1)),
     solver: {
       mode: "fallback",
       status: "greedy_fallback",
