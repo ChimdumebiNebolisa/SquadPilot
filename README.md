@@ -49,7 +49,7 @@ Features are derived from FPL data and next-GW fixtures and normalized to roughl
 |--------|--------|
 | **recentForm** | FPL “form” (normalized 0–10). |
 | **pointsPerGame** | Season points per game (normalized). |
-| **expectedMinutes** | Chance they play × historical share of 90 mins (from `minutesPlayedSeason` and `gameweeksPlayed`). Reduced if status is injured/suspended. |
+| **expectedMinutes** | Chance they play × historical share of 90 mins (from `minutesPlayedSeason` and completed gameweeks). Reduced if status is injured/suspended. |
 | **fixtureDifficulty** | Next-GW fixture difficulty (1–5 from FPL), inverted and normalized so easier = higher. |
 | **homeAway** | Home (1) / away (0) / unknown (0.5). |
 | **opponentStrength** | Opponent team strength from API, normalized so weaker opponent = higher. |
@@ -66,11 +66,15 @@ Each position uses a **base** set of weights; GK/DEF/MID/FWD then apply override
 ### 3. Projected points and 5+ chance
 
 - **Projected points** = `sum(factor × weight)` × 10, rounded. Used to rank players and as the main objective in the solver.
-- **5+ points chance** = a separate, calibrated probability (sigmoid-style) that the player scores at least 5 in the next GW. It uses projected points, expected minutes, fixture difficulty, form, health, value, and points-per-game, with position-specific thresholds and bounds. This is shown in the UI as “5+ pts %” and is used as a small secondary signal in the solver (projected score + 0.3 × 5+ chance).
+- **5+ points estimate** = a separate bounded heuristic (sigmoid-style) for whether the player reaches 5 points in the next GW. It is not a statistically calibrated probability. It uses projected points, expected minutes, fixture difficulty, form, health, value, and points-per-game, with position-specific thresholds and bounds. This is shown in the UI as “5+ pts %” and is used as a small secondary signal in the solver (projected score + 0.3 × 5+ estimate).
 
 ### 4. % chance of starting
 
-A separate, deterministic metric: **availability** (from FPL `chance_of_playing_next_round` or status) × **historical start rate** (minutes this season ÷ gameweeks ÷ 90, capped at 1). Shown in the player detail sheet as “% chance of starting”.
+A separate, deterministic metric: **availability** (from FPL `chance_of_playing_next_round` or status) × **historical start rate** (actual starts this season ÷ completed gameweeks, capped at 1). Minutes alone are not used as a start-rate proxy because substitute appearances would inflate the estimate. Shown in the player detail sheet as “% chance of starting”.
+
+## Current data coverage
+
+The current deterministic model uses the live FPL bootstrap and next-gameweek fixture endpoints. It does not yet ingest previous-season match logs, player-versus-opponent history, manager tactical history, predicted lineups, or a user's private Team ID. Those should be added only with explicit data sources and walk-forward validation; they are not silently approximated by the current score.
 
 ### 5. Squad selection (solver)
 
