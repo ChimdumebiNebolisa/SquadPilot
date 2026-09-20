@@ -32,7 +32,6 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
       const id = setTimeout(() => setOpen(true), 20);
       return () => clearTimeout(id);
     }
-    setOpen(false);
   }, [player]);
 
   if (!player) return null;
@@ -100,7 +99,7 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{fixtureDiff}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">5+ pts %</span><span className="hidden min-[480px]:inline">5+ points chance</span></dt>
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">5+ pts est.</span><span className="hidden min-[480px]:inline">5+ points estimate</span></dt>
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{fivePlusChance}%</dd>
             </div>
           </dl>
