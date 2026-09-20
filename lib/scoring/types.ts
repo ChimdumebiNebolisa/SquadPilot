@@ -1,4 +1,4 @@
-import type { NormalizedPlayer } from "@/lib/fpl/types";
+import type { NormalizedPlayer, OpponentHistoryView, PlayerFixtureView } from "@/lib/fpl/types";
 
 export interface PlayerFeatureVector {
   recentForm: number;
@@ -12,6 +12,7 @@ export interface PlayerFeatureVector {
   health: number;
   setPiece: number;
   historicalVsOpponent: number;
+  historicalBaseline: number;
   /** FPL's expected points next GW, normalized 0–1 (scale 0–15). */
   fplExpectedPoints: number;
   /** Attacking upside from ICT index; 0 for GK/DEF, normalized for MID/FWD. */
@@ -31,6 +32,7 @@ export interface ScoringWeights {
   health: number;
   setPiece: number;
   historicalVsOpponent: number;
+  historicalBaseline: number;
   fplExpectedPoints: number;
   attackingUpside: number;
 }
@@ -53,11 +55,20 @@ export interface PlayerExplanation {
 export interface ProjectedPlayer extends NormalizedPlayer {
   projectedScore: number;
   projectedPoints: number;
+  /** Deterministic 0–100 estimate; it is not a calibrated probability. */
+  fivePlusPointsEstimate: number;
+  /** Backwards-compatible alias for API consumers; UI labels it as an estimate. */
   chanceOfFivePlusPoints: number;
-  /** Deterministic % chance of starting next GW (0–100), from availability + minutes history. */
+  /** Deterministic 0–100 start estimate, not a calibrated probability. */
   chanceOfStarting: number;
-  /** Next-GW opponent team id (set when building response). */
+  expectedMinutes: number;
+  fixtureCount: number;
+  upcomingFixtures: PlayerFixtureView[];
   opponentTeamId?: number | null;
+  opponentHistory: OpponentHistoryView[];
+  historicalSampleSize: number;
+  historicalDataStatus: "available" | "partial" | "missing";
+  dataSources: Array<"fpl-live" | "vaastav-historical" | "user-team">;
   contributions: FactorContribution[];
   explanation: PlayerExplanation;
 }

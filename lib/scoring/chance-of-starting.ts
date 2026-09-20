@@ -1,45 +1,50 @@
-import type { NormalizedPlayer } from "@/lib/fpl/types";
+import type { NormalizedFixture, NormalizedPlayer } from "@/lib/fpl/types";
 
-/**
- * Deterministic % chance of starting (0–100).
- * Uses: FPL availability (chance_of_playing_next_round, status) and season minutes history.
- */
-export function computeChanceOfStarting(
-  player: NormalizedPlayer,
-  gameweeksPlayed: number,
-): number {
-  // 1. Availability (0–1): likelihood they are fit/available for the next round
-  const availability =
-    player.chanceOfPlayingNextRound !== null
-      ? Math.max(0, Math.min(1, player.chanceOfPlayingNextRound / 100))
-      : availabilityFromStatus(player.status);
+export interface StartEstimateContext {
+  completedTeamFixtures: number;
+  upcomingFixtureCount: number;
+}
 
-  // 2. Historical start rate (0–1): when available, how often they get “starter” minutes
-  const startRate =
-    gameweeksPlayed > 0
-      ? Math.min(1, player.minutesPlayedSeason / (gameweeksPlayed * 90))
-      : priorStartRate(player.position);
-
-  // 3. P(start) ≈ P(available) × P(starts when available)
-  const raw = availability * startRate * 100;
-  return Math.min(100, Math.max(0, Math.round(raw)));
+function clamp(value: number, min = 0, max = 1): number {
+  return Math.max(min, Math.min(max, value));
 }
 
 function availabilityFromStatus(status: string): number {
-  switch (status) {
-    case "a":
-      return 0.85;
-    case "d":
-      return 0.4;
-    case "i":
-    case "s":
-      return 0.15;
-    default:
-      return 0.6;
-  }
+  if (status === "a") return 1;
+  if (status === "d") return 0.4;
+  if (status === "i" || status === "s") return 0.05;
+  return 0.6;
 }
 
-function priorStartRate(position: NormalizedPlayer["position"]): number {
-  // No season data: GK more likely to be nailed; outfield conservative
-  return position === "GK" ? 0.75 : 0.65;
+/**
+ * Deterministic start estimate. It is deliberately not called a probability:
+ * it uses historical starts per actual team fixture, availability, and a
+ * small double-gameweek rotation adjustment.
+ */
+export function computeStartEstimate(player: NormalizedPlayer, context: StartEstimateContext): number {
+  const availability = player.chanceOfPlayingNextRound !== null
+    ? clamp(player.chanceOfPlayingNextRound / 100)
+    : availabilityFromStatus(player.status);
+  const selectionRate = context.completedTeamFixtures > 0
+    ? clamp(player.starts / context.completedTeamFixtures)
+    : player.position === "GK" ? 0.75 : 0.65;
+  const rotationAdjustment = context.upcomingFixtureCount > 1
+    ? Math.max(0.7, 1 - 0.1 * (context.upcomingFixtureCount - 1))
+    : 1;
+  return Math.round(clamp(availability * selectionRate * rotationAdjustment) * 100);
+}
+
+/** Count actual completed fixtures, not gameweeks. Provisionally finished matches count as completed. */
+export function countCompletedFixturesForTeam(teamId: number, fixtures: NormalizedFixture[]): number {
+  return fixtures.filter(
+    (fixture) =>
+      fixture.event != null &&
+      (fixture.finished || fixture.finishedProvisional) &&
+      (fixture.teamH === teamId || fixture.teamA === teamId),
+  ).length;
+}
+
+/** Compatibility wrapper for older callers; new scoring passes actual fixture counts. */
+export function computeChanceOfStarting(player: NormalizedPlayer, gameweeksPlayed: number): number {
+  return computeStartEstimate(player, { completedTeamFixtures: gameweeksPlayed, upcomingFixtureCount: 1 });
 }

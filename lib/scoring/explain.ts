@@ -23,6 +23,7 @@ function factorLabel(factor: FactorContribution["factor"]): string {
   if (factor === "health") return "availability";
   if (factor === "setPiece") return "set-piece";
   if (factor === "fplExpectedPoints") return "FPL expected points";
+  if (factor === "historicalBaseline") return "historical baseline";
   if (factor === "attackingUpside") return "attacking upside";
   return "opponent";
 }
@@ -67,6 +68,7 @@ const PLAYER_SPECIFIC_FACTORS: ReadonlySet<FactorContribution["factor"]> = new S
   "health",
   "fplExpectedPoints",
   "attackingUpside",
+  "historicalBaseline",
 ]);
 
 /** Downside factor = this player's weakest dimension among player-specific factors (lowest value). Skips team-level and zero-value factors. */

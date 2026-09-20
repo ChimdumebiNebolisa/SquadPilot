@@ -6,21 +6,36 @@ export interface SquadTopBarProps {
   nextGw?: number;
   isGenerating: boolean;
   onGenerate: () => void;
+  teamId: string;
+  onTeamIdChange: (value: string) => void;
 }
 
-export function SquadTopBar({ hasResults, nextGw, isGenerating, onGenerate }: SquadTopBarProps) {
+export function SquadTopBar({ hasResults, nextGw, isGenerating, onGenerate, teamId, onTeamIdChange }: SquadTopBarProps) {
   if (hasResults && nextGw != null) {
     return (
-      <header className="flex h-11 items-center justify-between px-1">
+      <header className="flex h-11 items-center justify-between gap-2 px-1">
         <span className="text-sm font-semibold text-foreground">GW {nextGw}</span>
-        <button
-          type="button"
-          onClick={onGenerate}
-          disabled={isGenerating}
-          className="rounded-lg border border-border/70 bg-panel/80 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-panel disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isGenerating ? "Generating…" : "Regenerate"}
-        </button>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider text-muted">
+            Team ID
+            <input
+              value={teamId}
+              onChange={(event) => onTeamIdChange(event.target.value.replace(/\D/g, ""))}
+              inputMode="numeric"
+              placeholder="optional"
+              className="h-7 w-20 rounded-md border border-border/70 bg-panel/80 px-1.5 text-xs normal-case tracking-normal text-foreground outline-none focus:border-brand/70"
+              aria-label="Optional FPL Team ID"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={onGenerate}
+            disabled={isGenerating}
+            className="rounded-lg border border-border/70 bg-panel/80 px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-panel disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isGenerating ? "Generating…" : "Regenerate"}
+          </button>
+        </div>
       </header>
     );
   }
@@ -34,6 +49,17 @@ export function SquadTopBar({ hasResults, nextGw, isGenerating, onGenerate }: Sq
             One click for squad, XI, captain & vice.
           </p>
         </div>
+        <label className="flex items-center gap-2 text-[11px] text-muted">
+          <span className="uppercase tracking-wider">Team ID</span>
+          <input
+            value={teamId}
+            onChange={(event) => onTeamIdChange(event.target.value.replace(/\D/g, ""))}
+            inputMode="numeric"
+            placeholder="optional"
+            className="h-9 w-24 rounded-lg border border-border/70 bg-background/50 px-2 text-sm text-foreground outline-none focus:border-brand/70"
+            aria-label="Optional FPL Team ID"
+          />
+        </label>
         <button
           type="button"
           onClick={onGenerate}

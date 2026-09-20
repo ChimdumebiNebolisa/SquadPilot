@@ -51,7 +51,11 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function chanceOfFivePlusPoints(position: Position, projectedPoints: number, features: PlayerFeatureVector): number {
+/**
+ * Deterministic heuristic estimate for reaching five points. It is not a
+ * calibrated probability and should not be described as one in the UI.
+ */
+export function estimateFivePlusPoints(position: Position, projectedPoints: number, features: PlayerFeatureVector): number {
   const profile = POSITION_PROFILES[position];
   const projectedSignal = (projectedPoints - (FIVE_POINT_THRESHOLD + profile.thresholdShift)) / profile.projectedDivisor;
   const minutesSignal = (features.expectedMinutes - 0.65) * 1.1;
@@ -76,3 +80,6 @@ export function chanceOfFivePlusPoints(position: Position, projectedPoints: numb
 
   return Number(boundedPercent.toFixed(1));
 }
+
+/** @deprecated Use estimateFivePlusPoints; retained for internal compatibility. */
+export const chanceOfFivePlusPoints = estimateFivePlusPoints;

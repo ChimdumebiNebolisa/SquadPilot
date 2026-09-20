@@ -1,83 +1,66 @@
 # FPL SquadPilot
 
-Web app that recommends one Fantasy Premier League squad for the next gameweek: 15 players, starting XI, captain, vice-captain, and bench order. One-click generate; no Team ID or login.
+SquadPilot is a deterministic, source-backed FPL decision tracker. It recommends a legal 15-player squad, starting XI, captain, vice-captain, and bench order for the next gameweek. It does not use an LLM, paid API, subjective football opinions, predicted lineups, manager-style analysis, or automatic transfers.
 
-## How to run
+## Run locally
 
-1. **Install dependencies**
+```bash
+npm install
+npm run dev
+```
 
-   ```bash
-   npm install
-   ```
+Open `http://localhost:3000`.
 
-2. **Start the dev server**
+Useful checks:
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run lint
+npx tsc --noEmit
+npm test
+npm run build
+```
 
-3. **Open** [http://localhost:3000](http://localhost:3000)
+## Data boundary
 
-**Other scripts**
+All live requests are server-side and cached in memory with retry, stale-cache fallback, and sync metadata.
 
-- `npm run build` — production build  
-- `npm run start` — run production server  
-- `npm run lint` — run ESLint  
+- **FPL public API** is live truth for current players, prices, points, form, minutes, starts, availability, news, chance-of-playing fields, expected goals/assists where supplied, FPL `ep_next`, set-piece order, team strengths, fixtures, home/away status, double gameweeks, and optional Team ID data.
+- **Vaastav’s Fantasy Premier League repository** is historical evidence only. Run `node scripts/sync-vaastav.mjs --season 2024-25` to import a season into `data/historical/`. The app does not fetch those CSV files during a user request.
 
-## How it works
+Every normalized record carries source, season, gameweek or fixture, as-of time, confidence, and availability status. Historical player joins prefer FPL element IDs; fallback identity matching is explicit and low-confidence. Missing historical data is displayed as “insufficient historical data”.
 
-1. You click **Generate Squad** on the home page.
-2. The app calls **`POST /api/recommend`**, which:
-   - Fetches next-gameweek data from the public FPL API (bootstrap-static, fixtures).
-   - Normalizes players, teams, and fixtures.
-   - **Scores** every player with a weighted feature model and turns that into a single projected score and a calibrated “5+ points” chance.
-   - **Solves** for a legal 15-man squad (budget, positions, 11 starters, 1 captain) using a MILP solver; if that fails, a greedy fallback picks the squad.
-   - Enriches each player with next-GW opponent and returns the recommendation.
-3. The UI shows the recommended squad on a **pitch view** (formation + bench), a **list view**, and a **player detail sheet** (projected points, expected minutes, % chance of starting, 5+ pts %, fixture difficulty, and short rationale).
+The repository does not claim support for manager tactical style, manager-specific opponent records, external predicted lineups, or injury information beyond FPL’s own status/news/chance fields. FPL `ep_next` is shown as a baseline comparator; it is not added again as an independent score signal. Start and points estimates are deterministic heuristics, not calibrated probabilities.
 
-All FPL requests are made server-side. The app uses in-memory caching and per-client rate limiting to reduce load on the FPL API.
+## Recommendation model
 
-## Scoring
+The score groups information into availability, expected minutes, recent production, season baseline, historical baseline, fixture context, opponent history, role/set pieces, and value. Correlated fields are capped or kept as a comparator instead of being blindly added together. A double gameweek aggregates every upcoming fixture for the team; the UI shows each fixture’s opponent and home/away status.
 
-Scoring is **deterministic** and **weighted by position**. There is no ML model; each player gets a 0–1 score per factor, then a weighted sum is turned into projected points and used for ordering and squad selection.
+Opponent history uses current-season FPL element-summary history when it is fetched for a supplied Team ID, plus imported Vaastav match-level data for older seasons. Small samples are shrunk toward the player baseline and the sample size is returned. No history means no invented estimate.
 
-### 1. Features (per player)
+The optimizer preserves FPL constraints:
 
-Features are derived from FPL data and next-GW fixtures and normalized to roughly 0–1 where higher is better:
+- 15 players: 2 GK, 5 DEF, 5 MID, 3 FWD
+- £100m budget
+- maximum three players per club
+- legal starting formations
+- captain and vice-captain linked to the starting XI
+- multiple fixtures supported in a gameweek
 
-| Factor | Meaning |
-|--------|--------|
-| **recentForm** | FPL “form” (normalized 0–10). |
-| **pointsPerGame** | Season points per game (normalized). |
-| **expectedMinutes** | Chance they play × historical share of 90 mins (from `minutesPlayedSeason` and `gameweeksPlayed`). Reduced if status is injured/suspended. |
-| **fixtureDifficulty** | Next-GW fixture difficulty (1–5 from FPL), inverted and normalized so easier = higher. |
-| **homeAway** | Home (1) / away (0) / unknown (0.5). |
-| **opponentStrength** | Opponent team strength from API, normalized so weaker opponent = higher. |
-| **value** | Points-per-game per price (value for money), capped. |
-| **differential** | Lower ownership = higher (normalized from `selectedByPercent`). |
-| **health** | Availability: FPL `chance_of_playing_next_round` or status (e.g. “a” = 1, “d” = 0.4, “i”/“s” = 0.15). |
-| **fplExpectedPoints** | FPL’s `ep_next` for the next GW (scale 0–15 → 0–1). |
-| **attackingUpside** | ICT index for MID/FWD only (0 for GK/DEF), normalized. |
+If the MILP cannot solve, the fallback first constructs the cheapest legal position- and club-valid squad, upgrades only within budget, and returns an error rather than an over-budget squad.
 
-### 2. Weights (by position)
+## Optional Team ID
 
-Each position uses a **base** set of weights; GK/DEF/MID/FWD then apply overrides (e.g. GK down-weights value and expected minutes; MID/FWD add attacking upside). The weighted sum over all factors is the raw **projected score**; that is scaled (×10) to get **projected points** shown in the UI.
+Enter an FPL Team ID before generating. SquadPilot then attempts to load the current squad, captain, vice-captain, bank, transfers where FPL supplies them, and history. It compares the current squad with the generic recommendation and gives deterministic starting-XI, captain, vice-captain, and weak-player suggestions. It never makes transfers automatically.
 
-### 3. Projected points and 5+ chance
+## Historical import and backtesting
 
-- **Projected points** = `sum(factor × weight)` × 10, rounded. Used to rank players and as the main objective in the solver.
-- **5+ points chance** = a separate, calibrated probability (sigmoid-style) that the player scores at least 5 in the next GW. It uses projected points, expected minutes, fixture difficulty, form, health, value, and points-per-game, with position-specific thresholds and bounds. This is shown in the UI as “5+ pts %” and is used as a small secondary signal in the solver (projected score + 0.3 × 5+ chance).
+The reproducible importer is `scripts/sync-vaastav.mjs`. It downloads the allowed Vaastav files, normalizes gameweek records, and writes JSON under `data/historical/` for the application to read.
 
-### 4. % chance of starting
+The walk-forward path is documented in [`docs/backtesting.md`](docs/backtesting.md). It only exposes records with gameweek earlier than the evaluated deadline, excludes post-match expected-point fields, and reports projection error, rank correlation, captain hit rate, start-estimate calibration, position and double-gameweek slices, recent-form comparison, and FPL `ep_next` comparison.
 
-A separate, deterministic metric: **availability** (from FPL `chance_of_playing_next_round` or status) × **historical start rate** (minutes this season ÷ gameweeks ÷ 90, capped at 1). Shown in the player detail sheet as “% chance of starting”.
+## Attribution
 
-### 5. Squad selection (solver)
+- Live data: [Fantasy Premier League public API](https://fantasy.premierleague.com/api/)
+- Historical data: [Vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League)
 
-- **MILP** (javascript-lp-solver): maximize sum of (projected score + 0.3 × 5+ chance) over the 15-man squad and 11 starters, subject to budget (100), position limits (2 GK, 5 DEF, 5 MID, 3 FWD), formation (e.g. 3–5–2, 4–4–2), and one captain. Candidate pool is built from top/cheap players per position so the problem stays small.
-- If the MILP fails or returns nothing, a **greedy fallback** fills the 15 and then the XI by position and projected score.
-
-## Stack
-
-- **Next.js** (App Router), **TypeScript**, **Tailwind CSS**
-- **javascript-lp-solver** for the MILP squad/XI optimization
+See [`docs/backtesting.md`](docs/backtesting.md) for the calibration boundary and reproducibility notes.
