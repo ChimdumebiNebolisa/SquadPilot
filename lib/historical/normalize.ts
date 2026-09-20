@@ -1,6 +1,7 @@
 import type {
   DataAvailability,
   DataProvenance,
+  DataSource,
   PlayerMatchPerformance,
   PlayerOpponentAggregate,
   PlayerSeasonAggregate,
@@ -56,6 +57,7 @@ function aggregatePerformance(
   records: PlayerMatchPerformance[],
   season: string,
   asOf: string,
+  source: DataSource,
 ): { seasonAggregates: PlayerSeasonAggregate[]; opponentAggregates: PlayerOpponentAggregate[] } {
   const byPlayer = new Map<number, PlayerMatchPerformance[]>();
   const byOpponent = new Map<string, PlayerMatchPerformance[]>();
@@ -76,8 +78,9 @@ function aggregatePerformance(
   const seasonAggregates = [...byPlayer.entries()].map(([playerId, playerRecords]) => {
     const minutes = playerRecords.reduce((sum, record) => sum + record.minutes, 0);
     return {
-      source: provenance("vaastav-historical", season, null, null, asOf),
+      source: provenance(source, season, null, null, asOf),
       playerId,
+      playerName: playerRecords.find((record) => record.playerName)?.playerName ?? null,
       season,
       matches: playerRecords.length,
       starts: playerRecords.reduce((sum, record) => sum + record.starts, 0),
@@ -102,8 +105,9 @@ function aggregatePerformance(
     const sampleSize = opponentRecords.length;
     const shrinkWeight = sampleSize / (sampleSize + 4);
     return {
-      source: provenance("vaastav-historical", season, null, null, asOf),
+      source: provenance(source, season, null, null, asOf),
       playerId,
+      playerName: opponentRecords.find((record) => record.playerName)?.playerName ?? null,
       opponentTeamId,
       matches: sampleSize,
       starts: opponentRecords.reduce((sum, record) => sum + record.starts, 0),
@@ -126,6 +130,7 @@ export function normalizeVaastavRows(
   rows: Array<Record<string, unknown>>,
   season: string,
   asOf = new Date().toISOString(),
+  source: DataSource = "vaastav-historical",
 ): HistoricalDataset {
   const performances = rows
     .map((row) => {
@@ -133,10 +138,11 @@ export function normalizeVaastavRows(
       const fixtureId = numberValue(row.fixture);
       const gameweek = numberValue(row.round);
       if (playerId <= 0 || fixtureId <= 0 || gameweek <= 0) return null;
+      if (row.position === "5" || row.position === 5 || row.element_type === "5" || row.element_type === 5) return null;
       const opponentTeamId = nullableNumber(row.opponent_team);
       const availability: DataAvailability = opponentTeamId == null ? "partial" : "available";
       return {
-        source: provenance("vaastav-historical", season, gameweek, fixtureId, asOf, availability),
+        source: provenance(source, season, gameweek, fixtureId, asOf, availability),
         playerId,
         playerName: typeof row.name === "string" ? row.name : null,
         position: typeof row.position === "string" ? row.position : null,
@@ -155,7 +161,7 @@ export function normalizeVaastavRows(
     })
     .filter((record): record is PlayerMatchPerformance => record !== null);
 
-  const aggregates = aggregatePerformance(performances, season, asOf);
+  const aggregates = aggregatePerformance(performances, season, asOf, source);
   return { performances, ...aggregates };
 }
 
@@ -176,7 +182,33 @@ export function normalizeFplElementSummary(
     element: elementId,
     starts: row.starts ?? 0,
   }));
-  return normalizeVaastavRows(rows, season, asOf);
+  const current = normalizeVaastavRows(rows, season, asOf, "fpl-live");
+  const historyPast = Array.isArray((payload as { history_past?: unknown[] }).history_past)
+    ? (payload as { history_past: unknown[] }).history_past
+    : [];
+  const pastAggregates = historyPast
+    .filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null)
+    .map((row) => {
+      const pastSeason = typeof row.season_name === "string" ? row.season_name : typeof row.season === "string" ? row.season : "unknown";
+      const minutes = numberValue(row.minutes);
+      const totalPoints = numberValue(row.total_points);
+      return {
+        source: provenance("fpl-live", pastSeason, null, null, asOf),
+        playerId: elementId,
+        playerName: null,
+        season: pastSeason,
+        matches: numberValue(row.matches_played ?? row.matches ?? row.gameweeks_played),
+        starts: numberValue(row.starts),
+        minutes,
+        totalPoints,
+        goals: numberValue(row.goals_scored),
+        assists: numberValue(row.assists),
+        pointsPer90: minutes > 0 ? (totalPoints / minutes) * 90 : 0,
+        homeMatches: 0,
+        awayMatches: 0,
+      } satisfies PlayerSeasonAggregate;
+    });
+  return { ...current, seasonAggregates: [...current.seasonAggregates, ...pastAggregates] };
 }
 
 export function lookupOpponentHistory(
@@ -184,15 +216,40 @@ export function lookupOpponentHistory(
   playerId: number,
   opponentTeamId: number,
   baselinePointsPer90: number | null,
+  playerName?: string | null,
 ): PlayerOpponentAggregate | null {
-  const record = dataset?.opponentAggregates.find(
-    (aggregate) => aggregate.playerId === playerId && aggregate.opponentTeamId === opponentTeamId,
-  );
-  if (!record) return null;
-  const shrinkWeight = record.sampleSize / (record.sampleSize + 4);
+  const normalizedName = normalizePlayerName(playerName);
+  const idRecords = dataset?.opponentAggregates.filter((aggregate) => aggregate.playerId === playerId && aggregate.opponentTeamId === opponentTeamId) ?? [];
+  const records = idRecords.length > 0
+    ? idRecords
+    : dataset?.opponentAggregates.filter((aggregate) =>
+      aggregate.opponentTeamId === opponentTeamId && normalizedName !== null && normalizePlayerName(aggregate.playerName) === normalizedName,
+    ) ?? [];
+  if (!records.length) return null;
+  const record = records[0];
+  const usedNameFallback = idRecords.length === 0;
+  const minutes = records.reduce((sum, item) => sum + item.minutes, 0);
+  const totalPoints = records.reduce((sum, item) => sum + item.totalPoints, 0);
+  const sampleSize = records.reduce((sum, item) => sum + item.sampleSize, 0);
+  const shrinkWeight = sampleSize / (sampleSize + 4);
+  const pointsPer90 = minutes > 0 ? (totalPoints / minutes) * 90 : 0;
   return {
     ...record,
-    shrunkPointsPer90: record.pointsPer90 * shrinkWeight + (baselinePointsPer90 ?? record.shrunkPointsPer90) * (1 - shrinkWeight),
+    playerId,
+    source: usedNameFallback ? { ...record.source, confidence: "low" } : record.source,
+    matches: sampleSize,
+    starts: records.reduce((sum, item) => sum + item.starts, 0),
+    minutes,
+    totalPoints,
+    pointsPer90,
+    sampleSize,
+    shrunkPointsPer90: pointsPer90 * shrinkWeight + (baselinePointsPer90 ?? record.shrunkPointsPer90) * (1 - shrinkWeight),
     dataStatus: "available",
   };
+}
+
+function normalizePlayerName(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const normalized = value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  return normalized || null;
 }

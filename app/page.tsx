@@ -106,10 +106,19 @@ export default function Home() {
               <section className="rounded-xl border border-border/50 bg-panel/50 px-3 py-3 text-xs leading-relaxed text-muted min-[480px]:px-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-semibold uppercase tracking-wider text-foreground">Your FPL team</h2>
-                  <span>FPL live · Team {response.data.userTeam.teamId}</span>
+                  <span>FPL live · Team {response.data.userTeam.teamId} · {response.data.userTeam.dataStatus}</span>
                 </div>
-                <p className="mt-1">{response.data.userTeam.comparison.added.length} recommended additions · {response.data.userTeam.comparison.dropped.length} players outside the generic squad. Bank: {response.data.userTeam.bank ?? "unavailable"}. Free transfers: {response.data.userTeam.freeTransfers ?? "unavailable"}.</p>
-                <p className="mt-1">Current points / projected: {response.data.userTeam.currentPlayers.slice(0, 5).map((player) => `${player.webName} ${player.currentPoints}/${player.projectedPoints.toFixed(1)}`).join(", ")}.</p>
+                {response.data.userTeam.dataWarnings.length > 0 && (
+                  <p className="mt-1 text-amber-200">{response.data.userTeam.dataWarnings.join(" ")}</p>
+                )}
+                {response.data.userTeam.picksAvailable ? (
+                  <>
+                    <p className="mt-1">{response.data.userTeam.comparison.added.length} recommended additions · {response.data.userTeam.comparison.dropped.length} players outside the generic squad. Bank: {response.data.userTeam.bank ?? "unavailable"}. Free transfers: {response.data.userTeam.freeTransfers ?? "unavailable"}.</p>
+                    <p className="mt-1">Current points / projected: {response.data.userTeam.currentPlayers.slice(0, 5).map((player) => `${player.webName} ${player.currentPoints}/${player.projectedPoints.toFixed(1)}`).join(", ")}.</p>
+                  </>
+                ) : (
+                  <p className="mt-1">Current squad comparison and points are unavailable until FPL returns this Team ID&apos;s picks.</p>
+                )}
                 <p className="mt-1">Suggested XI: {response.data.userTeam.recommendedStartingXIIds.length === 11 ? "legal" : "provisional"} · captain {response.data.userTeam.recommendedCaptainId ?? "unavailable"} · vice {response.data.userTeam.recommendedViceCaptainId ?? "unavailable"}.</p>
                 {response.data.userTeam.weakPlayers.length > 0 && (
                   <p className="mt-1">Watch: {response.data.userTeam.weakPlayers.map((player) => `${player.webName} (${player.reason})`).join(", ")}.</p>

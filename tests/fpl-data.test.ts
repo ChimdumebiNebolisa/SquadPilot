@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { normalizeVaastavRows, lookupOpponentHistory } from "@/lib/historical/normalize";
+import { normalizeFplElementSummary, normalizeVaastavRows, lookupOpponentHistory } from "@/lib/historical/normalize";
+import { getHistoricalAvailability } from "@/lib/historical/store";
 import { recordsAvailableBefore, recentPointsBefore } from "@/lib/historical/backtest";
 import { getFixturesForTeamAndEvent } from "@/lib/fpl/fixtures";
 import { normalizeFixtures, resolveGameweeksPlayed, resolveNextGameweek } from "@/lib/fpl/normalize";
@@ -46,6 +47,31 @@ test("opponent history shrinks a one-match sample toward the player baseline", (
   assert.equal(record.sampleSize, 1);
   assert.ok(record.shrunkPointsPer90 < record.pointsPer90);
   assert.equal(lookupOpponentHistory(dataset, 1, 99, 11), null);
+});
+
+test("historical joins fall back to player identity with low-confidence provenance", () => {
+  const dataset = normalizeVaastavRows([
+    { element: "999", name: "Test Player", fixture: "1", round: "1", team: "1", opponent_team: "2", was_home: "1", minutes: "90", starts: "1", total_points: "8" },
+  ], "2025-26", "2026-01-01T00:00:00.000Z");
+  const record = lookupOpponentHistory(dataset, 1, 2, 5, "Test Player");
+  assert.ok(record);
+  assert.equal(record.playerId, 1);
+  assert.equal(record.source.confidence, "low");
+});
+
+test("FPL element summaries retain live provenance and prior-season aggregates", () => {
+  const normalized = normalizeFplElementSummary(1, {
+    history: [{ round: 1, fixture: 1, opponent_team: 2, was_home: true, minutes: 90, starts: 1, total_points: 6 }],
+    history_past: [{ season_name: "2024/25", minutes: 900, starts: 10, total_points: 60 }],
+  }, "current", "2026-01-01T00:00:00.000Z");
+  assert.equal(normalized.performances[0]?.source.source, "fpl-live");
+  assert.equal(normalized.seasonAggregates.some((aggregate) => aggregate.season === "2024/25" && aggregate.pointsPer90 === 6), true);
+});
+
+test("versioned historical snapshots are available to the application", () => {
+  const availability = getHistoricalAvailability();
+  assert.equal(availability.status, "available");
+  assert.ok(availability.records > 0);
 });
 
 test("start estimate uses starts per actual fixture, not minutes divided by gameweeks", () => {

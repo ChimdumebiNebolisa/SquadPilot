@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 
 const season = process.argv[process.argv.indexOf("--season") + 1] || "2024-25";
 if (!/^\d{4}-\d{2}$/.test(season)) {
@@ -73,6 +74,8 @@ const performances = rows
     const fixtureId = number(row.fixture);
     const gameweek = number(row.round);
     if (!playerId || !fixtureId || !gameweek) return null;
+    const position = positionName(playerMetadata.get(playerId) || row);
+    if (!["GK", "DEF", "MID", "FWD"].includes(position)) return null;
     return {
       source: {
         source: "vaastav-historical",
@@ -85,7 +88,7 @@ const performances = rows
       },
       playerId,
       playerName: row.name || null,
-      position: positionName(playerMetadata.get(playerId) || row),
+      position,
       teamId: asNullableNumber(row.team),
       opponentTeamId: asNullableNumber(row.opponent_team),
       wasHome: row.was_home === "" ? null : asBool(row.was_home),
@@ -105,7 +108,7 @@ const seasonMap = new Map();
 const opponentMap = new Map();
 for (const record of performances) {
   const seasonKey = String(record.playerId);
-  const seasonAggregate = seasonMap.get(seasonKey) || { playerId: record.playerId, matches: 0, starts: 0, minutes: 0, totalPoints: 0, goals: 0, assists: 0, homeMatches: 0, awayMatches: 0 };
+  const seasonAggregate = seasonMap.get(seasonKey) || { playerId: record.playerId, playerName: record.playerName, matches: 0, starts: 0, minutes: 0, totalPoints: 0, goals: 0, assists: 0, homeMatches: 0, awayMatches: 0 };
   seasonAggregate.matches += 1;
   seasonAggregate.starts += record.starts;
   seasonAggregate.minutes += record.minutes;
@@ -117,7 +120,7 @@ for (const record of performances) {
   seasonMap.set(seasonKey, seasonAggregate);
   if (record.opponentTeamId == null) continue;
   const opponentKey = `${record.playerId}:${record.opponentTeamId}`;
-  const aggregate = opponentMap.get(opponentKey) || { playerId: record.playerId, opponentTeamId: record.opponentTeamId, matches: 0, starts: 0, minutes: 0, totalPoints: 0, homeMatches: 0, awayMatches: 0 };
+  const aggregate = opponentMap.get(opponentKey) || { playerId: record.playerId, playerName: record.playerName, opponentTeamId: record.opponentTeamId, matches: 0, starts: 0, minutes: 0, totalPoints: 0, homeMatches: 0, awayMatches: 0 };
   aggregate.matches += 1;
   aggregate.starts += record.starts;
   aggregate.minutes += record.minutes;
@@ -149,5 +152,6 @@ const opponentAggregates = [...opponentMap.values()].map((aggregate) => {
 
 const outputDirectory = join(process.cwd(), "data", "historical");
 await mkdir(outputDirectory, { recursive: true });
-await writeFile(join(outputDirectory, `${season}.json`), JSON.stringify({ season, importedAt: asOf, performances, seasonAggregates: aggregates, opponentAggregates }, null, 2));
-console.log(`Imported ${performances.length} match records for ${season}. Fixtures and players_raw were downloaded for reproducibility; application normalization uses the match records.`);
+const payload = JSON.stringify({ season, importedAt: asOf, performances, seasonAggregates: aggregates, opponentAggregates });
+await writeFile(join(outputDirectory, `${season}.json.gz`), gzipSync(payload, { level: 9 }));
+console.log(`Imported ${performances.length} match records for ${season} into data/historical/${season}.json.gz. Fixtures and players_raw were downloaded for reproducibility; application normalization uses the match records.`);
