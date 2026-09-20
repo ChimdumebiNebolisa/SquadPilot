@@ -3,27 +3,29 @@ import type { ScoringWeights } from "@/lib/scoring/types";
 
 /** Base weights; position overrides applied in getWeightsForPosition. */
 const BASE_WEIGHTS: ScoringWeights = {
-  version: "v1.1.0",
-  recentForm: 0.14,
-  pointsPerGame: 0.18,
-  expectedMinutes: 0.14,
+  version: "v2.0.0",
+  recentForm: 0.13,
+  pointsPerGame: 0.16,
+  expectedMinutes: 0.16,
   fixtureDifficulty: 0.12,
-  homeAway: 0.05,
-  opponentStrength: 0.07,
+  homeAway: 0.04,
+  opponentStrength: 0.06,
   value: 0.08,
-  differential: 0.03,
-  health: 0.07,
-  setPiece: 0,
-  historicalVsOpponent: 0,
-  fplExpectedPoints: 0.12,
+  differential: 0.02,
+  health: 0.08,
+  setPiece: 0.04,
+  historicalVsOpponent: 0.05,
+  historicalBaseline: 0.04,
+  // ep_next is returned as a comparator and is intentionally not added again to the score.
+  fplExpectedPoints: 0,
   attackingUpside: 0,
 };
 
 /** GK: lower emphasis on minutes/value (reduces bias), FPL EP in. */
 const GK_WEIGHTS: Partial<ScoringWeights> = {
-  expectedMinutes: 0.12,
+  expectedMinutes: 0.14,
   value: 0.06,
-  fplExpectedPoints: 0.12,
+  fplExpectedPoints: 0,
   attackingUpside: 0,
 };
 
@@ -31,21 +33,21 @@ const GK_WEIGHTS: Partial<ScoringWeights> = {
 const DEF_WEIGHTS: Partial<ScoringWeights> = {
   expectedMinutes: 0.14,
   fixtureDifficulty: 0.14,
-  fplExpectedPoints: 0.10,
+  fplExpectedPoints: 0,
   attackingUpside: 0,
 };
 
 /** MID: stronger form and FPL EP, add attacking upside. */
 const MID_WEIGHTS: Partial<ScoringWeights> = {
-  recentForm: 0.16,
-  fplExpectedPoints: 0.14,
+  recentForm: 0.15,
+  fplExpectedPoints: 0,
   attackingUpside: 0.06,
 };
 
 /** FWD: strongest FPL EP and attacking upside. */
 const FWD_WEIGHTS: Partial<ScoringWeights> = {
-  recentForm: 0.16,
-  fplExpectedPoints: 0.14,
+  recentForm: 0.15,
+  fplExpectedPoints: 0,
   attackingUpside: 0.06,
 };
 
@@ -58,7 +60,7 @@ const POSITION_OVERRIDES: Record<PlayerPosition, Partial<ScoringWeights>> = {
 
 const NUMERIC_WEIGHT_KEYS: Array<keyof Omit<ScoringWeights, "version">> = [
   "recentForm", "pointsPerGame", "expectedMinutes", "fixtureDifficulty", "homeAway",
-  "opponentStrength", "value", "differential", "health", "setPiece", "historicalVsOpponent",
+  "opponentStrength", "value", "differential", "health", "setPiece", "historicalVsOpponent", "historicalBaseline",
   "fplExpectedPoints", "attackingUpside",
 ];
 
@@ -75,4 +77,4 @@ export function getWeightsForPosition(position: PlayerPosition): ScoringWeights 
 }
 
 /** Weights version string for API response. */
-export const SCORING_WEIGHTS_VERSION = "v1.1.0";
+export const SCORING_WEIGHTS_VERSION = "v2.0.0";

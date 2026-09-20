@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { BenchDock } from "@/components/bench-dock";
-import { PerspectivePitch } from "@/components/perspective-pitch";
 import { PlayerDetailSheet } from "@/components/player-detail-sheet";
 import { PitchSkeleton } from "@/components/pitch-skeleton";
 import { RecommendedListView } from "@/components/recommended-list-view";
@@ -20,6 +18,12 @@ function normalizeError(code: string, fallbackMessage: string): string {
   if (code === "RATE_LIMITED") {
     return "Too many requests right now. Please retry in a moment.";
   }
+  if (code === "TEAM_UNAVAILABLE") {
+    return "That Team ID could not be loaded from FPL. Check the number and retry.";
+  }
+  if (code === "NO_FEASIBLE_SQUAD") {
+    return "No legal squad fits the current FPL data and £100m budget.";
+  }
   return fallbackMessage;
 }
 
@@ -28,6 +32,7 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [response, setResponse] = useState<RecommendResponse | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerView | null>(null);
+  const [teamId, setTeamId] = useState("");
   /** Default to list view on page load (not pitch). */
   const [viewMode, setViewMode] = useState<SquadViewMode>("list");
 
@@ -42,7 +47,7 @@ export default function Home() {
     const res = await fetch("/api/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
+      body: JSON.stringify(teamId ? { teamId: Number(teamId) } : {}),
     });
 
     const body = (await res.json()) as RecommendResponse | RecommendErrorResponse;
@@ -64,11 +69,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-3 px-3 py-3 min-[480px]:gap-4 min-[480px]:px-4 min-[480px]:py-4 md:px-6 md:py-6">
-        <SquadTopBar
+      <SquadTopBar
           hasResults={uiState === "success"}
           nextGw={response?.data.nextGw}
           isGenerating={uiState === "loading"}
-          onGenerate={generateRecommendation}
+        onGenerate={generateRecommendation}
+        teamId={teamId}
+        onTeamIdChange={setTeamId}
         />
 
         {uiState === "loading" && <PitchSkeleton />}
@@ -91,6 +98,24 @@ export default function Home() {
         {uiState === "success" && recommendation && (
           <>
             <SquadSummaryStrip recommendation={recommendation} />
+            <p className="px-1 text-[11px] leading-relaxed text-muted">
+              FPL live synced {response.data.freshness.lastSuccessfulSync ? new Date(response.data.freshness.lastSuccessfulSync).toLocaleString() : "unavailable"}
+              {response.data.freshness.stale ? " · showing stale cached data" : ""} · Vaastav historical: {response.data.freshness.historicalStatus === "missing" ? "insufficient historical data" : response.data.freshness.historicalStatus}.
+            </p>
+            {response?.data.userTeam && (
+              <section className="rounded-xl border border-border/50 bg-panel/50 px-3 py-3 text-xs leading-relaxed text-muted min-[480px]:px-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h2 className="font-semibold uppercase tracking-wider text-foreground">Your FPL team</h2>
+                  <span>FPL live · Team {response.data.userTeam.teamId}</span>
+                </div>
+                <p className="mt-1">{response.data.userTeam.comparison.added.length} recommended additions · {response.data.userTeam.comparison.dropped.length} players outside the generic squad. Bank: {response.data.userTeam.bank ?? "unavailable"}. Free transfers: {response.data.userTeam.freeTransfers ?? "unavailable"}.</p>
+                <p className="mt-1">Current points / projected: {response.data.userTeam.currentPlayers.slice(0, 5).map((player) => `${player.webName} ${player.currentPoints}/${player.projectedPoints.toFixed(1)}`).join(", ")}.</p>
+                <p className="mt-1">Suggested XI: {response.data.userTeam.recommendedStartingXIIds.length === 11 ? "legal" : "provisional"} · captain {response.data.userTeam.recommendedCaptainId ?? "unavailable"} · vice {response.data.userTeam.recommendedViceCaptainId ?? "unavailable"}.</p>
+                {response.data.userTeam.weakPlayers.length > 0 && (
+                  <p className="mt-1">Watch: {response.data.userTeam.weakPlayers.map((player) => `${player.webName} (${player.reason})`).join(", ")}.</p>
+                )}
+              </section>
+            )}
             <SquadViewToggle value={viewMode} onChange={setViewMode} />
 
             {/* Pitch section commented out – list view only */}

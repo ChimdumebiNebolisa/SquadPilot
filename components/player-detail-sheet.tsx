@@ -9,11 +9,11 @@ export interface PlayerDetailSheetProps {
   onClose: () => void;
 }
 
-/** Expected minutes 1–90 from model contribution (0–1). Missing or invalid → —. */
+/** Expected minutes 0–90 per fixture. Missing or invalid → —. */
 function expectedMinutesDisplay(player: PlayerView): string {
-  const raw = player.contributions.find((c) => c.factor === "expectedMinutes")?.value;
-  if (raw == null || typeof raw !== "number" || !Number.isFinite(raw)) return "—";
-  const mins = Math.round(raw * 90);
+  const raw = player.expectedMinutes;
+  if (typeof raw !== "number" || !Number.isFinite(raw)) return "—";
+  const mins = Math.round(raw);
   return String(Math.min(90, Math.max(1, mins)));
 }
 
@@ -32,7 +32,8 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
       const id = setTimeout(() => setOpen(true), 20);
       return () => clearTimeout(id);
     }
-    setOpen(false);
+    const id = setTimeout(() => setOpen(false), 0);
+    return () => clearTimeout(id);
   }, [player]);
 
   if (!player) return null;
@@ -42,7 +43,7 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
     player.opponentTeamId != null ? teamShortNames[player.opponentTeamId] ?? `T${player.opponentTeamId}` : null;
   const expectedMins = expectedMinutesDisplay(player);
   const fixtureDiff = fixtureDifficulty1To5(player);
-  const fivePlusChance = Math.round(player.chanceOfFivePlusPoints);
+  const fivePlusEstimate = Math.round(player.fivePlusPointsEstimate);
 
   return (
     <>
@@ -84,7 +85,7 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
 
           <dl className="mt-3 space-y-2 text-[11px] leading-snug min-[480px]:mt-4 min-[480px]:space-y-2.5">
             <div className="flex justify-between gap-2">
-              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">% start</span><span className="hidden min-[480px]:inline">% chance of starting</span></dt>
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">Start est.</span><span className="hidden min-[480px]:inline">Start estimate</span></dt>
               <dd className="shrink-0 font-medium tabular-nums text-foreground">
               {typeof player.chanceOfStarting === "number" && !Number.isNaN(player.chanceOfStarting)
                 ? `${Math.round(player.chanceOfStarting)}%`
@@ -100,14 +101,24 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
               <dd className="shrink-0 font-medium tabular-nums text-foreground">{fixtureDiff}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">5+ pts %</span><span className="hidden min-[480px]:inline">5+ points chance</span></dt>
-              <dd className="shrink-0 font-medium tabular-nums text-foreground">{fivePlusChance}%</dd>
+              <dt className="uppercase tracking-wider text-muted"><span className="min-[480px]:hidden">5+ est.</span><span className="hidden min-[480px]:inline">5+ points estimate</span></dt>
+              <dd className="shrink-0 font-medium tabular-nums text-foreground">{fivePlusEstimate}%</dd>
             </div>
           </dl>
 
           <p className="mt-2.5 text-[11px] leading-snug text-muted min-[480px]:mt-3">
-            1 = easy, 5 = hard.
+            1 = easy, 5 = hard. Estimates are deterministic and not calibrated probabilities.
           </p>
+
+          <div className="mt-3 space-y-1 text-[11px] leading-relaxed text-muted min-[480px]:mt-4">
+            <p><span className="font-medium text-muted-foreground">Fixtures:</span> {player.upcomingFixtures.length > 0
+              ? player.upcomingFixtures.map((fixture) => `${fixture.isHome ? "H" : "A"} · ${teamShortNames[fixture.opponentTeamId] ?? `T${fixture.opponentTeamId}`}`).join(" / ")
+              : "provisional — fixture data incomplete"}</p>
+            <p><span className="font-medium text-muted-foreground">Opponent history:</span> {player.historicalSampleSize > 0
+              ? `${player.historicalSampleSize} match${player.historicalSampleSize === 1 ? "" : "es"} · ${player.opponentHistory[0]?.shrunkPointsPer90.toFixed(1) ?? "—"} pts/90 after shrinkage`
+              : "insufficient historical data"}</p>
+            <p><span className="font-medium text-muted-foreground">Sources:</span> {player.dataSources.join(" + ")}</p>
+          </div>
 
           {(player.explanation.whyPicked || player.explanation.mainRisk) && (
             <div className="mt-3 space-y-1 text-[11px] leading-relaxed text-muted min-[480px]:mt-4 min-[480px]:space-y-1.5">
