@@ -7,7 +7,6 @@ export interface SquadSummaryStripProps {
 }
 
 function formationString(startingXI: RecommendationView["startingXI"]): string {
-  const gk = startingXI.filter((p) => p.position === "GK").length;
   const def = startingXI.filter((p) => p.position === "DEF").length;
   const mid = startingXI.filter((p) => p.position === "MID").length;
   const fwd = startingXI.filter((p) => p.position === "FWD").length;
