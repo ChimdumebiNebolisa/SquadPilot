@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { BenchDock } from "@/components/bench-dock";
-import { PerspectivePitch } from "@/components/perspective-pitch";
 import { PlayerDetailSheet } from "@/components/player-detail-sheet";
 import { PitchSkeleton } from "@/components/pitch-skeleton";
 import { RecommendedListView } from "@/components/recommended-list-view";
