@@ -22,6 +22,7 @@ Historical records come from the [Vaastav Fantasy Premier League repository](htt
 Rebuild and verify the checked-in data with:
 
 ```bash
+npm run sync:historical -- --season 2023-24
 npm run sync:historical -- --season 2024-25
 npm run sync:historical -- --season 2025-26
 npm run verify:reimport
@@ -29,7 +30,7 @@ npm run verify:reimport
 
 ## Projection model
 
-The checked-in model is trained on leakage-free 2024-25 pre-gameweek states and held out on 2025-26. Projected points and the 5+ model estimate use separate models; the probability model is limited to inputs that share production and historical replay semantics. Availability is reported separately through the starting outlook, and double-gameweek evidence is explicitly marked as limited. The artifact is content-hashed, and FPL `ep_next` is never a model input.
+The checked-in model is trained on leakage-free 2024-25 pre-gameweek states, using 2023-24 as previous-season context, and held out on 2025-26. Projected points and the 5+ model estimate use separate models. The probability model combines current performance with stable-code-linked previous-season player and opponent history through the same production/replay feature builder. Availability is reported separately through the starting outlook, and double-gameweek evidence is explicitly marked as limited. The artifact is content-hashed, and FPL `ep_next` is never a model input.
 
 See [docs/backtesting.md](docs/backtesting.md) for feature definitions, reproduction commands, release gates, and evidence limitations.
 
