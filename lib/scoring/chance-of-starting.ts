@@ -43,8 +43,3 @@ export function countCompletedFixturesForTeam(teamId: number, fixtures: Normaliz
       (fixture.teamH === teamId || fixture.teamA === teamId),
   ).length;
 }
-
-/** Compatibility wrapper for older callers; new scoring passes actual fixture counts. */
-export function computeChanceOfStarting(player: NormalizedPlayer, gameweeksPlayed: number): number {
-  return computeStartEstimate(player, { completedTeamFixtures: gameweeksPlayed, upcomingFixtureCount: 1 });
-}

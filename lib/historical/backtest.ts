@@ -10,12 +10,12 @@ export function recordsAvailableBefore(
 
 export function recentPointsBefore(
   records: PlayerMatchPerformance[],
-  playerId: number,
+  playerCode: number,
   evaluatedGameweek: number,
   window = 5,
 ): number[] {
   return recordsAvailableBefore(records, evaluatedGameweek)
-    .filter((record) => record.playerId === playerId)
+    .filter((record) => record.playerCode === playerCode)
     .sort((left, right) => (left.source.gameweek ?? 0) - (right.source.gameweek ?? 0))
     .slice(-window)
     .map((record) => record.totalPoints);

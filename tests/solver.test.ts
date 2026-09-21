@@ -6,12 +6,12 @@ import type { ProjectedPlayer } from "@/lib/scoring/types";
 function projected(id: number, position: ProjectedPlayer["position"], teamId: number, price: number): ProjectedPlayer {
   return {
     source: { source: "fpl-live", season: "current", gameweek: 1, fixtureId: null, asOf: "2026-01-01T00:00:00.000Z", confidence: "high", availability: "available" },
-    id, webName: `P${id}`, firstName: "", lastName: "", teamId, position, price, totalPoints: 50, form: 5,
+    id, code: 10_000 + id, webName: `P${id}`, firstName: "", lastName: "", teamId, teamCode: 1_000 + teamId, position, price, totalPoints: 50, form: 5,
     pointsPerGame: 5, selectedByPercent: 10, status: "a", news: "", chanceOfPlayingNextRound: 100, epNext: 5,
     ictIndex: 100, minutesPlayedSeason: 900, starts: 10, goals: 0, assists: 0, expectedGoals: null, expectedAssists: null,
     cornersAndIndirectFreeKicksOrder: null, directFreeKicksOrder: null, penaltiesOrder: null,
-    projectedScore: 1, projectedPoints: 10, fivePlusPointsEstimate: 50, chanceOfFivePlusPoints: 50, chanceOfStarting: 80,
-    expectedMinutes: 72, fixtureCount: 1, upcomingFixtures: [], opponentHistory: [], historicalSampleSize: 0,
+    projectedScore: 1, projectedPoints: 10, fivePlusProbability: 50, startEstimatePercent: 80,
+    expectedMinutes: 72, fixtureCount: 1, fixtureStatus: "scheduled", upcomingFixtures: [], opponentHistory: [], historicalSampleSize: 0,
     historicalDataStatus: "missing", dataSources: ["fpl-live"], contributions: [],
     explanation: { summary: "", whyPicked: "", mainRisk: "", confidence: "Medium", tags: [] },
   };
@@ -35,6 +35,7 @@ test("fallback remains budget safe and links captain and vice-captain to XI", ()
   assert.ok(result.budgetUsed <= BUDGET_CAP);
   assert.ok(result.startingXI.some((player) => player.id === result.captain.id));
   assert.ok(result.startingXI.some((player) => player.id === result.viceCaptain.id));
+  assert.equal(result.projectedTotal, 120);
 });
 
 test("over-budget fallback returns no recommendation instead of a silently illegal squad", () => {

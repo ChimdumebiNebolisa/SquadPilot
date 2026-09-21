@@ -15,36 +15,30 @@ export interface PlayerView {
   price: number;
   totalPoints: number;
   projectedPoints: number;
-  chanceOfFivePlusPoints: number;
-  fivePlusPointsEstimate: number;
-  /** Deterministic start estimate (0–100), not a calibrated probability. */
-  chanceOfStarting: number;
+  fivePlusProbability: number;
+  /** Heuristic availability/start estimate, not a calibrated probability. */
+  startEstimatePercent: number;
   expectedMinutes: number;
   fixtureCount: number;
+  fixtureStatus: "scheduled";
   upcomingFixtures: Array<{
     fixtureId: number;
     event: number;
     opponentTeamId: number;
+    opponentTeamCode: number;
     isHome: boolean;
     difficulty: number | null;
     kickoffTime: string | null;
-    source: "fpl-live" | "vaastav-historical" | "user-team";
   }>;
   opponentHistory: Array<{
     opponentTeamId: number;
-    matches: number;
     sampleSize: number;
-    pointsPer90: number;
     shrunkPointsPer90: number;
-    baselinePointsPer90: number | null;
-    homeMatches: number;
-    awayMatches: number;
   }>;
   historicalSampleSize: number;
   historicalDataStatus: "available" | "partial" | "missing";
   dataSources: Array<"fpl-live" | "vaastav-historical" | "user-team">;
   chanceOfPlayingNextRound: number | null;
-  /** Next-GW opponent team id (for "vs XYZ" on pitch). */
   opponentTeamId?: number | null;
   status: string;
   explanation: {
@@ -59,10 +53,11 @@ export interface PlayerView {
 
 export interface RecommendationView {
   squad: PlayerView[];
-  startingXI: PlayerView[];
-  bench: PlayerView[];
-  captain: PlayerView;
-  viceCaptain: PlayerView;
+  startingXIIds: number[];
+  benchIds: number[];
+  captainId: number;
+  viceCaptainId: number;
+  projectedTotal: number;
   budgetUsed: number;
   solver: {
     mode: "solver" | "fallback";
@@ -70,27 +65,44 @@ export interface RecommendationView {
   };
 }
 
+export interface FreshnessView {
+  state: "fresh" | "stale" | "degraded";
+  sources: {
+    bootstrap: { state: "fresh" | "stale"; fetchedAt: string; ageSeconds: number };
+    fixtures: { state: "fresh" | "stale"; fetchedAt: string; ageSeconds: number };
+    history: { state: "fresh" | "degraded"; status: "available" | "partial" | "missing" };
+    team?: { state: "fresh" | "stale"; fetchedAt: string; ageSeconds: number };
+  };
+}
+
 export interface RecommendData {
+  schemaVersion: 2;
   nextGw: number;
+  fixtureStatus: "available";
   recommendation: RecommendationView;
-  teams: Array<{
-    id: number;
-    shortName: string;
-    name: string;
-  }>;
-  freshness: {
-    lastSuccessfulSync: string | null;
-    stale: boolean;
-    historicalStatus: "available" | "partial" | "missing";
+  teams: Array<{ id: number; shortName: string; name: string }>;
+  freshness: FreshnessView;
+  scoring: {
+    modelVersion: string;
+    trainingSeason: string;
+    validationSeason: string;
+    fplExpectedPoints: "comparator-only";
   };
   userTeam?: {
     teamId: number;
     teamName: string | null;
+    picksEvent: number | null;
     dataStatus: "available" | "partial";
     dataWarnings: string[];
     historyAvailable: boolean;
     picksAvailable: boolean;
-    currentPlayers: Array<{ playerId: number; webName: string; currentPoints: number; projectedPoints: number; chanceOfStarting: number; }>;
+    currentPlayers: Array<{
+      playerId: number;
+      webName: string;
+      currentPoints: number;
+      projectedPoints: number;
+      startEstimatePercent: number;
+    }>;
     bank: number | null;
     freeTransfers: number | null;
     captainId: number | null;

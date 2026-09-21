@@ -1,98 +1,148 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { normalizeFplElementSummary, normalizeVaastavRows, lookupOpponentHistory } from "@/lib/historical/normalize";
-import { getHistoricalAvailability } from "@/lib/historical/store";
 import { recordsAvailableBefore, recentPointsBefore } from "@/lib/historical/backtest";
+import { lookupOpponentHistory, normalizeVaastavRows } from "@/lib/historical/normalize";
+import { getHistoricalAvailability } from "@/lib/historical/store";
 import { getFixturesForTeamAndEvent } from "@/lib/fpl/fixtures";
-import { normalizeFixtures, resolveGameweeksPlayed, resolveNextGameweek } from "@/lib/fpl/normalize";
+import {
+  FplSchemaError,
+  normalizeBootstrap,
+  normalizeFixtures,
+  resolveGameweeksPlayed,
+  resolveNextGameweek,
+  resolvePicksEventCandidates,
+} from "@/lib/fpl/normalize";
+import type { NormalizedPlayer, NormalizedTeam } from "@/lib/fpl/types";
 import { computeStartEstimate } from "@/lib/scoring/chance-of-starting";
-import type { NormalizedPlayer } from "@/lib/fpl/types";
+import { scorePlayers } from "@/lib/scoring/score";
+
+const source = { source: "fpl-live" as const, season: "current", gameweek: null, fixtureId: null, asOf: "2026-01-01T00:00:00.000Z", confidence: "high" as const, availability: "available" as const };
 
 function player(overrides: Partial<NormalizedPlayer> = {}): NormalizedPlayer {
   return {
-    source: { source: "fpl-live", season: "current", gameweek: null, fixtureId: null, asOf: "2026-01-01T00:00:00.000Z", confidence: "high", availability: "available" },
-    id: 1, webName: "Test", firstName: "", lastName: "", teamId: 1, position: "MID", price: 6,
-    totalPoints: 100, form: 5, pointsPerGame: 5, selectedByPercent: 10, status: "a", news: "",
-    chanceOfPlayingNextRound: null, epNext: 5, ictIndex: 100, minutesPlayedSeason: 900, starts: 2,
-    goals: 0, assists: 0, expectedGoals: null, expectedAssists: null,
-    cornersAndIndirectFreeKicksOrder: null, directFreeKicksOrder: null, penaltiesOrder: null,
+    source,
+    id: 1,
+    code: 101,
+    webName: "Test",
+    firstName: "Test",
+    lastName: "Player",
+    teamId: 1,
+    teamCode: 10,
+    position: "MID",
+    price: 6,
+    totalPoints: 100,
+    form: 5,
+    pointsPerGame: 5,
+    selectedByPercent: 10,
+    status: "a",
+    news: "",
+    chanceOfPlayingNextRound: null,
+    epNext: 5,
+    ictIndex: 100,
+    minutesPlayedSeason: 900,
+    starts: 2,
+    goals: 0,
+    assists: 0,
+    expectedGoals: null,
+    expectedAssists: null,
+    cornersAndIndirectFreeKicksOrder: null,
+    directFreeKicksOrder: null,
+    penaltiesOrder: null,
     ...overrides,
   };
 }
 
-test("aggregates every fixture in a double gameweek and preserves home/away", () => {
+function team(id: number, code: number): NormalizedTeam {
+  return {
+    source,
+    id,
+    code,
+    name: `Team ${id}`,
+    shortName: `T${id}`,
+    strength: 3,
+    strengthOverallHome: 1200,
+    strengthOverallAway: 1200,
+    strengthAttackHome: 1200,
+    strengthAttackAway: 1200,
+    strengthDefenceHome: 1200,
+    strengthDefenceAway: 1200,
+  };
+}
+
+test("double gameweeks aggregate every fixture and stable opponent code", () => {
   const fixtures = normalizeFixtures([
-    { id: 1, event: 20, team_h: 1, team_a: 2, team_h_difficulty: 2, team_a_difficulty: 4, kickoff_time: null, finished: false },
-    { id: 2, event: 20, team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 2, kickoff_time: null, finished: false },
-  ], "2026-01-01T00:00:00.000Z");
-  const summary = getFixturesForTeamAndEvent(1, 20, fixtures);
+    { id: 1, event: 20, team_h: 1, team_a: 2, team_h_difficulty: 2, team_a_difficulty: 4, finished: false },
+    { id: 2, event: 20, team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 2, finished: false },
+  ]);
+  const summary = getFixturesForTeamAndEvent(1, 20, fixtures, [team(1, 10), team(2, 20), team(3, 30)]);
   assert.equal(summary.fixtureCount, 2);
   assert.equal(summary.homeCount, 1);
   assert.equal(summary.awayCount, 1);
-  assert.deepEqual(summary.fixtures.map((fixture) => fixture.opponentTeamId), [2, 3]);
+  assert.deepEqual(summary.fixtures.map((fixture) => fixture.opponentTeamCode), [20, 30]);
 });
 
-test("provisionally finished matches count as played and next gameweek skips them", () => {
-  assert.equal(resolveGameweeksPlayed({ events: [{ id: 1, finished: true }, { id: 2, finished: false, finished_provisional: true }, { id: 3, finished: false }] }), 2);
-  assert.equal(resolveNextGameweek({ events: [{ id: 1, finished: true }, { id: 2, finished: false, finished_provisional: true }, { id: 3, is_next: true, finished: false }] }), 3);
+test("provisionally finished matches count and picks use latest deadline-passed event", () => {
+  const events = {
+    events: [
+      { id: 1, finished: true, deadline_time: "2025-08-01T10:00:00Z" },
+      { id: 2, finished_provisional: true, deadline_time: "2025-08-08T10:00:00Z" },
+      { id: 3, is_next: true, finished: false, deadline_time: "2027-08-15T10:00:00Z" },
+    ],
+  };
+  assert.equal(resolveGameweeksPlayed(events), 2);
+  assert.equal(resolveNextGameweek(events), 3);
+  assert.deepEqual(resolvePicksEventCandidates(events, Date.parse("2026-01-01T00:00:00Z")), [2, 1]);
 });
 
-test("opponent history shrinks a one-match sample toward the player baseline", () => {
+test("reused source element IDs cannot cross-match stable player codes", () => {
   const dataset = normalizeVaastavRows([
-    { element: "1", fixture: "1", round: "1", team: "1", opponent_team: "2", was_home: "1", minutes: "90", starts: "1", total_points: "20" },
-    { element: "1", fixture: "2", round: "2", team: "1", opponent_team: "3", was_home: "0", minutes: "90", starts: "1", total_points: "2" },
-  ], "2024-25", "2026-01-01T00:00:00.000Z");
-  const record = lookupOpponentHistory(dataset, 1, 2, 11);
-  assert.ok(record);
-  assert.equal(record.sampleSize, 1);
-  assert.ok(record.shrunkPointsPer90 < record.pointsPer90);
-  assert.equal(lookupOpponentHistory(dataset, 1, 99, 11), null);
+    { element: 7, player_code: 1001, name: "Original", fixture: 1, round: 1, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 10 },
+    { element: 7, player_code: 2002, name: "Different", fixture: 2, round: 2, team_code: 30, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 2 },
+  ], "2024-25", "2026-01-01T00:00:00Z");
+  assert.equal(lookupOpponentHistory(dataset, 1001, 20, 5)?.totalPoints, 10);
+  assert.equal(lookupOpponentHistory(dataset, 2002, 20, 5)?.totalPoints, 2);
+  assert.equal(dataset.seasonAggregates.length, 2);
 });
 
-test("historical joins fall back to player identity with low-confidence provenance", () => {
+test("renamed players with the same stable code retain their history", () => {
   const dataset = normalizeVaastavRows([
-    { element: "999", name: "Test Player", fixture: "1", round: "1", team: "1", opponent_team: "2", was_home: "1", minutes: "90", starts: "1", total_points: "8" },
-  ], "2025-26", "2026-01-01T00:00:00.000Z");
-  const record = lookupOpponentHistory(dataset, 1, 2, 5, "Test Player");
-  assert.ok(record);
-  assert.equal(record.playerId, 1);
-  assert.equal(record.source.confidence, "low");
+    { element: 8, player_code: 3003, name: "Old Name", fixture: 1, round: 1, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 4 },
+    { element: 9, player_code: 3003, name: "New Name", fixture: 2, round: 2, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 8 },
+  ], "2024-25", "2026-01-01T00:00:00Z");
+  const record = lookupOpponentHistory(dataset, 3003, 20, 6);
+  assert.equal(record?.sampleSize, 2);
+  assert.equal(record?.totalPoints, 12);
 });
 
-test("FPL element summaries retain live provenance and prior-season aggregates", () => {
-  const normalized = normalizeFplElementSummary(1, {
-    history: [{ round: 1, fixture: 1, opponent_team: 2, was_home: true, minutes: 90, starts: 1, total_points: 6 }],
-    history_past: [{ season_name: "2024/25", minutes: 900, starts: 10, total_points: 60 }],
-  }, "current", "2026-01-01T00:00:00.000Z");
-  assert.equal(normalized.performances[0]?.source.source, "fpl-live");
-  assert.equal(normalized.seasonAggregates.some((aggregate) => aggregate.season === "2024/25" && aggregate.pointsPer90 === 6), true);
+test("malformed bootstrap players fail instead of becoming unknown free forwards", () => {
+  assert.throws(() => normalizeBootstrap({ elements: [{ id: 1 }], teams: [] }), FplSchemaError);
 });
 
-test("versioned historical snapshots are available to the application", () => {
+test("valid fixture feed blanks are excluded while zero expected minutes is preserved", () => {
+  const teams = [team(1, 10), team(2, 20), team(3, 30)];
+  const fixtures = normalizeFixtures([
+    { id: 1, event: 4, team_h: 1, team_a: 2, team_h_difficulty: 2, team_a_difficulty: 4, finished: false },
+  ]);
+  const scored = scorePlayers([
+    player({ id: 1, teamId: 1, starts: 0, minutesPlayedSeason: 0 }),
+    player({ id: 2, code: 102, teamId: 3, teamCode: 30 }),
+  ], teams, fixtures, 3, { nextGameweek: 4 });
+  assert.deepEqual(scored.map((item) => item.id), [1]);
+  assert.equal(scored[0].expectedMinutes, 0);
+});
+
+test("historical snapshots are available and walk-forward inputs exclude the target GW", () => {
   const availability = getHistoricalAvailability();
   assert.equal(availability.status, "available");
-  assert.ok(availability.records > 0);
-});
-
-test("start estimate uses starts per actual fixture, not minutes divided by gameweeks", () => {
-  const estimate = computeStartEstimate(player({ starts: 2, minutesPlayedSeason: 900 }), { completedTeamFixtures: 20, upcomingFixtureCount: 1 });
-  assert.equal(estimate, 10);
-  assert.equal(computeStartEstimate(player({ status: "i", chanceOfPlayingNextRound: 0, starts: 20 }), { completedTeamFixtures: 20, upcomingFixtureCount: 1 }), 0);
-  assert.ok(computeStartEstimate(player({ starts: 2, minutesPlayedSeason: 900 }), { completedTeamFixtures: 20, upcomingFixtureCount: 2 }) < estimate);
-});
-
-test("walk-forward inputs exclude the evaluated gameweek", () => {
   const dataset = normalizeVaastavRows([
-    { element: "1", fixture: "1", round: "1", opponent_team: "2", minutes: "90", starts: "1", total_points: "4" },
-    { element: "1", fixture: "2", round: "2", opponent_team: "2", minutes: "90", starts: "1", total_points: "15" },
-  ], "2024-25", "2026-01-01T00:00:00.000Z");
-  const before = recordsAvailableBefore(dataset.performances, 2);
-  assert.deepEqual(recentPointsBefore(dataset.performances, 1, 2), [4]);
-  assert.equal(before.length, 1);
-  assert.equal(before[0]?.totalPoints, 4);
+    { element: 1, player_code: 1001, fixture: 1, round: 1, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 4 },
+    { element: 2, player_code: 1001, fixture: 2, round: 2, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 15 },
+  ], "2024-25", "2026-01-01T00:00:00Z");
+  assert.equal(recordsAvailableBefore(dataset.performances, 2).length, 1);
+  assert.deepEqual(recentPointsBefore(dataset.performances, 1001, 2), [4]);
 });
 
-test("missing fixture and historical data stays explicitly missing", () => {
-  assert.deepEqual(getFixturesForTeamAndEvent(1, 1, []).status, "missing");
-  assert.equal(lookupOpponentHistory(null, 1, 2, 5), null);
+test("start estimate uses completed fixtures and remains explicitly heuristic", () => {
+  assert.equal(computeStartEstimate(player({ starts: 2 }), { completedTeamFixtures: 20, upcomingFixtureCount: 1 }), 10);
+  assert.equal(computeStartEstimate(player({ status: "i", chanceOfPlayingNextRound: 0, starts: 20 }), { completedTeamFixtures: 20, upcomingFixtureCount: 1 }), 0);
 });

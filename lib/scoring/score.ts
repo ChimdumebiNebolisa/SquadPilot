@@ -1,18 +1,16 @@
-import { lookupOpponentHistory, type HistoricalDataset } from "@/lib/historical/normalize";
+import { latestSeasonAggregate, lookupOpponentHistory, type HistoricalDataset } from "@/lib/historical/normalize";
 import { getFixturesForTeamAndEvent } from "@/lib/fpl/fixtures";
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/lib/fpl/types";
 import { computeStartEstimate, countCompletedFixturesForTeam } from "@/lib/scoring/chance-of-starting";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
-import { estimateFivePlusPoints } from "@/lib/scoring/probability";
+import { predictCalibratedProjection, SCORING_MODEL_VERSION } from "@/lib/scoring/model";
 import { getWeightsForPosition } from "@/lib/scoring/weights";
 import type { FactorContribution, PlayerFeatureVector, ProjectedPlayer, ScoringWeights } from "@/lib/scoring/types";
 
 export interface ScoreOptions {
   nextGameweek?: number;
   historical?: HistoricalDataset | null;
-  currentSeasonOpponentHistory?: Map<number, OpponentHistoryView[]>;
-  currentSeasonPreviousSeasonBaseline?: Map<number, number | null>;
 }
 
 function toContributions(features: PlayerFeatureVector, weights: ScoringWeights): FactorContribution[] {
@@ -27,31 +25,19 @@ function historicalForPlayer(
   player: NormalizedPlayer,
   fixtures: ReturnType<typeof getFixturesForTeamAndEvent>["fixtures"],
   historical: HistoricalDataset | null | undefined,
-  currentSeason: Map<number, OpponentHistoryView[]> | undefined,
 ): OpponentHistoryView[] {
-  const current = currentSeason?.get(player.id) ?? [];
   const baselinePointsPer90 = player.minutesPlayedSeason > 0
     ? (player.totalPoints / player.minutesPlayedSeason) * 90
     : player.pointsPerGame;
   const records: OpponentHistoryView[] = fixtures.flatMap((fixture) => {
-      const existing = current.find((record) => record.opponentTeamId === fixture.opponentTeamId);
-      if (existing) return [{ ...existing, baselinePointsPer90 }];
-      const historicalRecord = lookupOpponentHistory(historical ?? null, player.id, fixture.opponentTeamId, baselinePointsPer90, `${player.firstName} ${player.lastName}`);
-      return historicalRecord ? [{ ...historicalRecord, baselinePointsPer90 }] : [];
+      const historicalRecord = lookupOpponentHistory(historical ?? null, player.code, fixture.opponentTeamCode, baselinePointsPer90);
+      return historicalRecord ? [{ ...historicalRecord, opponentTeamId: fixture.opponentTeamId, baselinePointsPer90 }] : [];
     });
   return records;
 }
 
-function normalizePlayerName(value: string): string {
-  return value.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-
 function previousSeasonPointsPer90(player: NormalizedPlayer, historical: HistoricalDataset | null | undefined): number | null {
-  const playerName = normalizePlayerName(`${player.firstName} ${player.lastName}`);
-  const aggregates = historical?.seasonAggregates.filter((aggregate) =>
-    aggregate.playerId === player.id || (aggregate.playerName != null && normalizePlayerName(aggregate.playerName) === playerName),
-  ) ?? [];
-  return [...aggregates].sort((left, right) => right.season.localeCompare(left.season))[0]?.pointsPer90 ?? null;
+  return latestSeasonAggregate(historical ?? null, player.code)?.pointsPer90 ?? null;
 }
 
 export function scorePlayers(
@@ -62,32 +48,41 @@ export function scorePlayers(
   options: ScoreOptions = {},
 ): ProjectedPlayer[] {
   const nextGameweek = options.nextGameweek ?? 0;
+  const teamIds = [...new Set(players.map((player) => player.teamId))];
+  const fixtureSummaryByTeam = new Map(teamIds.map((teamId) => [
+    teamId,
+    nextGameweek > 0
+      ? getFixturesForTeamAndEvent(teamId, nextGameweek, fixtures, teams)
+      : { fixtures: [], fixtureCount: 0, averageDifficulty: null, homeCount: 0, awayCount: 0, status: "missing" as const },
+  ]));
+  const completedFixturesByTeam = new Map(teamIds.map((teamId) => [
+    teamId,
+    countCompletedFixturesForTeam(teamId, fixtures) || gameweeksPlayed,
+  ]));
 
   return players
-    .map((player) => {
-      const fixtureSummary = nextGameweek > 0
-        ? getFixturesForTeamAndEvent(player.teamId, nextGameweek, fixtures)
-        : { fixtures: [], fixtureCount: 0, averageDifficulty: null, homeCount: 0, awayCount: 0, status: "missing" as const };
-      const opponentHistory = historicalForPlayer(player, fixtureSummary.fixtures, options.historical, options.currentSeasonOpponentHistory);
-      const previousSeasonBaseline = options.currentSeasonPreviousSeasonBaseline?.get(player.id)
-        ?? previousSeasonPointsPer90(player, options.historical);
+    .map<ProjectedPlayer | null>((player) => {
+      const fixtureSummary = fixtureSummaryByTeam.get(player.teamId);
+      if (!fixtureSummary) return null;
+      if (fixtureSummary.fixtureCount === 0) return null;
+      const opponentHistory = historicalForPlayer(player, fixtureSummary.fixtures, options.historical);
+      const previousSeasonBaseline = previousSeasonPointsPer90(player, options.historical);
       const featureResult = extractFeaturesForPlayer(player, teams, fixtures, {
         nextGameweek,
         gameweeksPlayed,
-        completedTeamFixtures: countCompletedFixturesForTeam(player.teamId, fixtures) || gameweeksPlayed,
+        completedTeamFixtures: completedFixturesByTeam.get(player.teamId) ?? gameweeksPlayed,
         opponentHistory,
         previousSeasonPointsPer90: previousSeasonBaseline,
+        fixtureSummary,
       });
       const weights = getWeightsForPosition(player.position);
       const contributions = toContributions(featureResult.features, weights);
-      const perFixtureScore = contributions.reduce((sum, entry) => sum + entry.contribution, 0);
-      const fixtureMultiplier = featureResult.fixtureCount > 0 ? featureResult.fixtureCount : 1;
-      const projectedScore = perFixtureScore * fixtureMultiplier;
-      const projectedPoints = Number((projectedScore * 10).toFixed(2));
-      const fivePlusPointsEstimate = estimateFivePlusPoints(player.position, projectedPoints, featureResult.features);
+      const calibrated = predictCalibratedProjection(player.position, featureResult.features, featureResult.fixtureCount);
+      const projectedScore = calibrated.projectedPoints;
+      const projectedPoints = calibrated.projectedPoints;
       const startEstimate = computeStartEstimate(player, {
-        completedTeamFixtures: countCompletedFixturesForTeam(player.teamId, fixtures) || gameweeksPlayed,
-        upcomingFixtureCount: Math.max(1, featureResult.fixtureCount),
+        completedTeamFixtures: completedFixturesByTeam.get(player.teamId) ?? gameweeksPlayed,
+        upcomingFixtureCount: featureResult.fixtureCount,
       });
       const historicalSampleSize = opponentHistory.reduce((sum, record) => sum + record.sampleSize, 0);
       const historicalDataStatus = opponentHistory.length === 0 && previousSeasonBaseline == null
@@ -103,11 +98,11 @@ export function scorePlayers(
         ...player,
         projectedScore,
         projectedPoints,
-        fivePlusPointsEstimate,
-        chanceOfFivePlusPoints: fivePlusPointsEstimate,
-        chanceOfStarting: startEstimate,
+        fivePlusProbability: calibrated.fivePlusProbability,
+        startEstimatePercent: startEstimate,
         expectedMinutes: featureResult.expectedMinutes,
         fixtureCount: featureResult.fixtureCount,
+        fixtureStatus: "scheduled",
         upcomingFixtures: featureResult.upcomingFixtures,
         opponentTeamId: featureResult.upcomingFixtures[0]?.opponentTeamId ?? null,
         opponentHistory,
@@ -116,7 +111,10 @@ export function scorePlayers(
         dataSources: [...dataSources],
         contributions,
         explanation: buildPlayerExplanation({ position: player.position, contributions }),
-      } satisfies ProjectedPlayer;
+      };
     })
+    .filter((player): player is ProjectedPlayer => player !== null)
     .sort((a, b) => b.projectedScore - a.projectedScore);
 }
+
+export { SCORING_MODEL_VERSION };

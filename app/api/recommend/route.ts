@@ -1,63 +1,168 @@
 import { NextResponse } from "next/server";
-import { normalizeFplElementSummary } from "@/lib/historical/normalize";
 import { getHistoricalAvailability, loadHistoricalDataset } from "@/lib/historical/store";
 import {
+  aggregateFreshness,
   FplHttpError,
   fetchBootstrapStatic,
-  fetchElementSummary,
   fetchEntry,
   fetchEntryHistory,
   fetchEntryPicks,
   fetchFixtures,
-  getFplSyncStatus,
+  type SourceFreshness,
 } from "@/lib/fpl/fetchers";
-import { normalizeBootstrap, normalizeFixtures, resolveGameweeksPlayed, resolveNextGameweek } from "@/lib/fpl/normalize";
+import {
+  FplSchemaError,
+  normalizeBootstrap,
+  normalizeFixtures,
+  resolveGameweeksPlayed,
+  resolveNextGameweek,
+  resolvePicksEventCandidates,
+  SeasonCompleteError,
+} from "@/lib/fpl/normalize";
 import { normalizeCurrentUserTeam } from "@/lib/fpl/team";
-import type { OpponentHistoryView } from "@/lib/fpl/types";
 import { scorePlayers } from "@/lib/scoring/score";
-import { SCORING_WEIGHTS_VERSION } from "@/lib/scoring/weights";
+import {
+  SCORING_MODEL_TRAINING_SEASON,
+  SCORING_MODEL_VALIDATION_SEASON,
+  SCORING_MODEL_VERSION,
+} from "@/lib/scoring/model";
 import type { ProjectedPlayer } from "@/lib/scoring/types";
+import type { PlayerView } from "@/lib/recommendation/types";
 import { buildRecommendation, chooseBestStartingXI } from "@/lib/solver/recommend";
-import { checkRateLimit } from "@/lib/server/rate-limit";
 
-function parseTeamId(body: unknown): number | null {
-  if (typeof body !== "object" || body === null) return null;
-  const raw = (body as { teamId?: unknown }).teamId;
-  const teamId = typeof raw === "number" ? raw : Number(raw);
-  return Number.isInteger(teamId) && teamId > 0 ? teamId : null;
+const MAX_REQUEST_BYTES = 1_024;
+const NO_STORE_HEADERS = { "Cache-Control": "no-store, max-age=0" };
+
+class RequestValidationError extends Error {}
+
+function errorResponse(code: string, message: string, status: number, upstreamStatus?: number) {
+  return NextResponse.json(
+    { ok: false, error: { code, message, ...(upstreamStatus ? { status: upstreamStatus } : {}) } },
+    { status, headers: NO_STORE_HEADERS },
+  );
 }
 
-async function loadCurrentTeam(teamId: number, nextGw: number) {
-  const entryRaw = await fetchEntry(teamId);
-  const [historyResult, picksResult] = await Promise.allSettled([
+async function parseRequest(request: Request): Promise<{ teamId?: number }> {
+  const contentLength = Number(request.headers.get("content-length") ?? 0);
+  if (Number.isFinite(contentLength) && contentLength > MAX_REQUEST_BYTES) {
+    throw new RequestValidationError("Request body exceeds 1 KB.");
+  }
+  const text = await request.text();
+  if (new TextEncoder().encode(text).byteLength > MAX_REQUEST_BYTES) {
+    throw new RequestValidationError("Request body exceeds 1 KB.");
+  }
+  let body: unknown = {};
+  if (text.trim()) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      throw new RequestValidationError("Request body must be valid JSON.");
+    }
+  }
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    throw new RequestValidationError("Request body must be a JSON object.");
+  }
+  const record = body as Record<string, unknown>;
+  if (Object.keys(record).some((key) => key !== "teamId")) {
+    throw new RequestValidationError("Only the optional teamId field is supported.");
+  }
+  if (!("teamId" in record)) return {};
+  if (typeof record.teamId !== "number" || !Number.isSafeInteger(record.teamId) || record.teamId <= 0) {
+    throw new RequestValidationError("teamId must be a positive integer.");
+  }
+  return { teamId: record.teamId };
+}
+
+function combineTeamFreshness(values: SourceFreshness[]): SourceFreshness | undefined {
+  if (values.length === 0) return undefined;
+  const oldest = [...values].sort((left, right) => right.ageSeconds - left.ageSeconds)[0];
+  return {
+    source: "team",
+    state: values.some((value) => value.state === "stale") ? "stale" : "fresh",
+    fetchedAt: oldest.fetchedAt,
+    ageSeconds: oldest.ageSeconds,
+  };
+}
+
+async function loadCurrentTeam(teamId: number, picksEvents: number[]) {
+  const [entryResult, historyResult] = await Promise.allSettled([
+    fetchEntry(teamId),
     fetchEntryHistory(teamId),
-    fetchEntryPicks(teamId, nextGw),
   ]);
-  const historyRaw = historyResult.status === "fulfilled" ? historyResult.value : null;
-  const picksRaw = picksResult.status === "fulfilled" ? picksResult.value : null;
-  const team = normalizeCurrentUserTeam(teamId, entryRaw, historyRaw, picksRaw);
-  return { team, picksError: picksResult.status === "rejected", historyError: historyResult.status === "rejected" };
+  if (entryResult.status === "rejected") throw entryResult.reason;
+
+  let picksRaw: unknown = null;
+  let picksEvent: number | null = null;
+  let picksError = false;
+  const freshness = [entryResult.value.freshness];
+  if (historyResult.status === "fulfilled") freshness.push(historyResult.value.freshness);
+
+  for (const eventId of picksEvents) {
+    try {
+      const result = await fetchEntryPicks(teamId, eventId);
+      picksRaw = result.value;
+      picksEvent = eventId;
+      freshness.push(result.freshness);
+      break;
+    } catch (error) {
+      if (error instanceof FplHttpError && error.status === 404) continue;
+      picksError = true;
+      break;
+    }
+  }
+
+  const team = normalizeCurrentUserTeam(
+    teamId,
+    entryResult.value.value,
+    historyResult.status === "fulfilled" ? historyResult.value.value : null,
+    picksRaw,
+  );
+  return {
+    team,
+    picksEvent,
+    picksError,
+    historyError: historyResult.status === "rejected",
+    freshness: combineTeamFreshness(freshness),
+  };
 }
 
-async function loadCurrentSeasonHistory(playerIds: number[]): Promise<{
-  opponentHistory: Map<number, OpponentHistoryView[]>;
-  previousSeasonBaseline: Map<number, number | null>;
-}> {
-  const opponentHistory = new Map<number, OpponentHistoryView[]>();
-  const previousSeasonBaseline = new Map<number, number | null>();
-  const summaries = await Promise.allSettled(playerIds.map((playerId) => fetchElementSummary(playerId)));
-  summaries.forEach((summary, index) => {
-    if (summary.status !== "fulfilled") return;
-    const playerId = playerIds[index];
-    if (!playerId) return;
-    const normalized = normalizeFplElementSummary(playerId, summary.value);
-    opponentHistory.set(playerId, normalized.opponentAggregates.map((record) => ({ ...record, baselinePointsPer90: null })));
-    const past = normalized.seasonAggregates
-      .filter((aggregate) => aggregate.season !== "current" && aggregate.pointsPer90 > 0)
-      .sort((left, right) => right.season.localeCompare(left.season))[0];
-    if (past) previousSeasonBaseline.set(playerId, past.pointsPer90);
-  });
-  return { opponentHistory, previousSeasonBaseline };
+function toPlayerView(player: ProjectedPlayer): PlayerView {
+  return {
+    id: player.id,
+    webName: player.webName,
+    teamId: player.teamId,
+    position: player.position,
+    price: player.price,
+    totalPoints: player.totalPoints,
+    projectedPoints: player.projectedPoints,
+    fivePlusProbability: player.fivePlusProbability,
+    startEstimatePercent: player.startEstimatePercent,
+    expectedMinutes: player.expectedMinutes,
+    fixtureCount: player.fixtureCount,
+    fixtureStatus: player.fixtureStatus,
+    upcomingFixtures: player.upcomingFixtures.map((fixture) => ({
+      fixtureId: fixture.fixtureId,
+      event: fixture.event,
+      opponentTeamId: fixture.opponentTeamId,
+      opponentTeamCode: fixture.opponentTeamCode,
+      isHome: fixture.isHome,
+      difficulty: fixture.difficulty,
+      kickoffTime: fixture.kickoffTime,
+    })),
+    opponentTeamId: player.opponentTeamId,
+    opponentHistory: player.opponentHistory.map((history) => ({
+      opponentTeamId: history.opponentTeamId,
+      sampleSize: history.sampleSize,
+      shrunkPointsPer90: history.shrunkPointsPer90,
+    })),
+    historicalSampleSize: player.historicalSampleSize,
+    historicalDataStatus: player.historicalDataStatus,
+    dataSources: player.dataSources,
+    chanceOfPlayingNextRound: player.chanceOfPlayingNextRound,
+    status: player.status,
+    explanation: player.explanation,
+    contributions: player.contributions,
+  };
 }
 
 function buildUserTeamView(
@@ -71,24 +176,25 @@ function buildUserTeamView(
     .map((pick) => byId.get(pick.playerId))
     .filter((player): player is ProjectedPlayer => player != null);
   const currentXI = chooseBestStartingXI(currentPlayers) ?? [];
-  const recommendedCaptain = [...currentXI].sort((a, b) => b.projectedPoints - a.projectedPoints)[0] ?? null;
+  const recommendedCaptain = [...currentXI].sort((left, right) => right.projectedPoints - left.projectedPoints)[0] ?? null;
   const recommendedVice = [...currentXI]
     .filter((player) => player.id !== recommendedCaptain?.id)
-    .sort((a, b) => b.projectedPoints - a.projectedPoints)[0] ?? null;
+    .sort((left, right) => right.projectedPoints - left.projectedPoints)[0] ?? null;
   const currentIds = new Set(currentPlayers.map((player) => player.id));
   const recommendedIds = new Set(recommendation.squad.map((player) => player.id));
   const comparisonAvailable = currentTeam.picksAvailable && !currentTeamResult.picksError;
-  const captainPick = currentTeam.squad.find((pick) => pick.isCaptain)?.playerId ?? null;
-  const vicePick = currentTeam.squad.find((pick) => pick.isViceCaptain)?.playerId ?? null;
 
   return {
     teamId: currentTeam.teamId,
     teamName: currentTeam.teamName,
-    dataStatus: currentTeamResult.picksError || currentTeamResult.historyError || !currentTeam.picksAvailable ? "partial" as const : "available" as const,
+    picksEvent: currentTeamResult.picksEvent,
+    dataStatus: currentTeamResult.picksError || currentTeamResult.historyError || !currentTeam.picksAvailable
+      ? "partial" as const
+      : "available" as const,
     dataWarnings: [
-      ...(currentTeamResult.picksError ? ["Current squad picks could not be loaded from FPL."] : []),
+      ...(currentTeamResult.picksError ? ["Squad picks could not be loaded from FPL."] : []),
       ...(currentTeamResult.historyError ? ["Team history could not be loaded from FPL."] : []),
-      ...(!currentTeam.picksAvailable && !currentTeamResult.picksError ? ["FPL returned no squad picks for this Team ID."] : []),
+      ...(!currentTeam.picksAvailable && !currentTeamResult.picksError ? ["No deadline-passed squad picks are available for this Team ID."] : []),
     ],
     historyAvailable: currentTeam.historyAvailable,
     picksAvailable: currentTeam.picksAvailable,
@@ -97,23 +203,23 @@ function buildUserTeamView(
       webName: player.webName,
       currentPoints: player.totalPoints,
       projectedPoints: player.projectedPoints,
-      chanceOfStarting: player.chanceOfStarting,
+      startEstimatePercent: player.startEstimatePercent,
     })),
     bank: currentTeam.bank,
     freeTransfers: currentTeam.freeTransfers,
-    captainId: captainPick,
-    viceCaptainId: vicePick,
+    captainId: currentTeam.squad.find((pick) => pick.isCaptain)?.playerId ?? null,
+    viceCaptainId: currentTeam.squad.find((pick) => pick.isViceCaptain)?.playerId ?? null,
     recommendedStartingXIIds: currentXI.map((player) => player.id),
     recommendedCaptainId: recommendedCaptain?.id ?? null,
     recommendedViceCaptainId: recommendedVice?.id ?? null,
     weakPlayers: currentPlayers
-      .filter((player) => player.chanceOfStarting < 50 || player.fixtureCount === 0)
-      .sort((a, b) => a.chanceOfStarting - b.chanceOfStarting)
+      .filter((player) => player.startEstimatePercent < 50)
+      .sort((left, right) => left.startEstimatePercent - right.startEstimatePercent)
       .slice(0, 5)
       .map((player) => ({
         playerId: player.id,
         webName: player.webName,
-        reason: player.fixtureCount === 0 ? "fixture data incomplete" : `start estimate ${player.chanceOfStarting}%`,
+        reason: `start estimate ${player.startEstimatePercent}%`,
       })),
     comparison: {
       added: comparisonAvailable ? [...recommendedIds].filter((id) => !currentIds.has(id)) : [],
@@ -124,57 +230,78 @@ function buildUserTeamView(
 
 export async function POST(request: Request) {
   try {
-    const forwardedFor = request.headers.get("x-forwarded-for");
-    const clientKey = forwardedFor?.split(",")[0]?.trim() || "local";
-    const rateLimit = checkRateLimit(clientKey);
-    if (!rateLimit.allowed) {
-      return NextResponse.json(
-        { ok: false, error: { code: "RATE_LIMITED", message: "Too many requests. Please retry shortly." } },
-        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfterSeconds) } },
-      );
+    const { teamId } = await parseRequest(request);
+    const [bootstrapResult, fixturesResult] = await Promise.all([
+      fetchBootstrapStatic(),
+      fetchFixtures(),
+    ]);
+    const bootstrapRaw = bootstrapResult.value;
+    const nextGw = resolveNextGameweek(bootstrapRaw);
+    const { players, teams } = normalizeBootstrap(bootstrapRaw);
+    let fixtures;
+    try {
+      fixtures = normalizeFixtures(fixturesResult.value);
+    } catch (error) {
+      if (error instanceof FplSchemaError) {
+        return errorResponse("FIXTURE_DATA_UNAVAILABLE", "FPL fixture data is invalid or unavailable.", 502);
+      }
+      throw error;
     }
 
-    const body = await request.json().catch(() => ({}));
-    const requestedTeamId = parseTeamId(body);
-    const bootstrapRaw = await fetchBootstrapStatic();
-    const nextGw = resolveNextGameweek(bootstrapRaw);
-    const fixturesRaw = await fetchFixtures();
-    const { players, teams } = normalizeBootstrap(bootstrapRaw);
-    const fixtures = normalizeFixtures(fixturesRaw);
-    const gameweeksPlayed = resolveGameweeksPlayed(bootstrapRaw);
-    const historical = loadHistoricalDataset();
-
     let currentTeamResult: Awaited<ReturnType<typeof loadCurrentTeam>> | null = null;
-    if (requestedTeamId != null) {
+    if (teamId != null) {
       try {
-        currentTeamResult = await loadCurrentTeam(requestedTeamId, nextGw);
+        currentTeamResult = await loadCurrentTeam(teamId, resolvePicksEventCandidates(bootstrapRaw));
       } catch {
-        return NextResponse.json(
-          { ok: false, error: { code: "TEAM_UNAVAILABLE", message: "The supplied Team ID could not be loaded from FPL." } },
-          { status: 422 },
-        );
+        return errorResponse("TEAM_UNAVAILABLE", "The supplied Team ID could not be loaded from FPL.", 422);
       }
     }
 
-    const currentSeasonHistory = currentTeamResult
-      ? await loadCurrentSeasonHistory(currentTeamResult.team.squad.map((pick) => pick.playerId))
-      : undefined;
-    const projectedPlayers = scorePlayers(players, teams, fixtures, gameweeksPlayed, {
+    const historical = loadHistoricalDataset();
+    const projectedPlayers = scorePlayers(players, teams, fixtures, resolveGameweeksPlayed(bootstrapRaw), {
       nextGameweek: nextGw,
       historical,
-      currentSeasonOpponentHistory: currentSeasonHistory?.opponentHistory,
-      currentSeasonPreviousSeasonBaseline: currentSeasonHistory?.previousSeasonBaseline,
     });
     const recommendation = buildRecommendation(projectedPlayers);
     if (!recommendation) {
-      return NextResponse.json(
-        { ok: false, error: { code: "NO_FEASIBLE_SQUAD", message: "No legal 15-player squad fits the current data and £100m budget." } },
-        { status: 422 },
-      );
+      return errorResponse("NO_FEASIBLE_SQUAD", "No legal 15-player squad fits the current data and £100m budget.", 422);
     }
 
     const historicalStatus = getHistoricalAvailability();
-    const freshness = getFplSyncStatus();
+    const fetched = aggregateFreshness({
+      bootstrap: bootstrapResult.freshness,
+      fixtures: fixturesResult.freshness,
+      team: currentTeamResult?.freshness,
+    });
+    const historyDegraded = historicalStatus.status !== "available";
+    const teamDegraded = currentTeamResult != null
+      && (currentTeamResult.picksError || currentTeamResult.historyError || !currentTeamResult.team.picksAvailable);
+    const freshness = {
+      state: historyDegraded || teamDegraded ? "degraded" as const : fetched.state,
+      sources: {
+        bootstrap: {
+          state: bootstrapResult.freshness.state,
+          fetchedAt: bootstrapResult.freshness.fetchedAt,
+          ageSeconds: bootstrapResult.freshness.ageSeconds,
+        },
+        fixtures: {
+          state: fixturesResult.freshness.state,
+          fetchedAt: fixturesResult.freshness.fetchedAt,
+          ageSeconds: fixturesResult.freshness.ageSeconds,
+        },
+        history: {
+          state: historyDegraded ? "degraded" as const : "fresh" as const,
+          status: historicalStatus.status,
+        },
+        ...(currentTeamResult?.freshness ? {
+          team: {
+            state: currentTeamResult.freshness.state,
+            fetchedAt: currentTeamResult.freshness.fetchedAt,
+            ageSeconds: currentTeamResult.freshness.ageSeconds,
+          },
+        } : {}),
+      },
+    };
     const userTeam = currentTeamResult
       ? buildUserTeamView(currentTeamResult, projectedPlayers, recommendation)
       : undefined;
@@ -182,24 +309,47 @@ export async function POST(request: Request) {
     return NextResponse.json({
       ok: true,
       data: {
+        schemaVersion: 2,
         nextGw,
-        recommendation,
-        teams,
-        freshness: { ...freshness, historicalStatus: historicalStatus.status },
+        fixtureStatus: "available",
+        recommendation: {
+          squad: recommendation.squad.map(toPlayerView),
+          startingXIIds: recommendation.startingXI.map((player) => player.id),
+          benchIds: recommendation.bench.map((player) => player.id),
+          captainId: recommendation.captain.id,
+          viceCaptainId: recommendation.viceCaptain.id,
+          projectedTotal: recommendation.projectedTotal,
+          budgetUsed: recommendation.budgetUsed,
+          solver: recommendation.solver,
+        },
+        teams: teams.map((team) => ({ id: team.id, shortName: team.shortName, name: team.name })),
+        freshness,
+        scoring: {
+          modelVersion: SCORING_MODEL_VERSION,
+          trainingSeason: SCORING_MODEL_TRAINING_SEASON,
+          validationSeason: SCORING_MODEL_VALIDATION_SEASON,
+          fplExpectedPoints: "comparator-only",
+        },
         userTeam,
-        scoring: { weightsVersion: SCORING_WEIGHTS_VERSION, fplExpectedPoints: "baseline comparator only" },
       },
-    });
+    }, { headers: NO_STORE_HEADERS });
   } catch (error) {
-    if (error instanceof FplHttpError) {
-      return NextResponse.json(
-        { ok: false, error: { code: error.status === 429 ? "RATE_LIMITED" : "UPSTREAM_ERROR", message: "FPL upstream data is currently unavailable.", status: error.status } },
-        { status: error.status === 429 ? 429 : 502 },
-      );
+    if (error instanceof RequestValidationError) {
+      return errorResponse("VALIDATION_ERROR", error.message, 400);
     }
-    return NextResponse.json(
-      { ok: false, error: { code: "INTERNAL_ERROR", message: "Unexpected failure while building recommendation payload." } },
-      { status: 500 },
-    );
+    if (error instanceof SeasonCompleteError) {
+      return errorResponse("SEASON_COMPLETE", error.message, 409);
+    }
+    if (error instanceof FplSchemaError) {
+      return errorResponse("UPSTREAM_SCHEMA_ERROR", "FPL bootstrap data does not match the required schema.", 502);
+    }
+    if (error instanceof FplHttpError) {
+      if (error.source === "fixtures") {
+        return errorResponse("FIXTURE_DATA_UNAVAILABLE", "FPL fixture data is currently unavailable.", 502, error.status);
+      }
+      const status = error.status === 429 ? 429 : 502;
+      return errorResponse(error.status === 429 ? "RATE_LIMITED" : "UPSTREAM_ERROR", "FPL upstream data is currently unavailable.", status, error.status);
+    }
+    return errorResponse("INTERNAL_ERROR", "Unexpected failure while building recommendation payload.", 500);
   }
 }

@@ -1,0 +1,891 @@
+{
+  "schemaVersion": 1,
+  "features": [
+    "recentForm",
+    "pointsPerGame",
+    "expectedMinutes",
+    "fixtureDifficulty",
+    "homeAway",
+    "value",
+    "historicalVsOpponent"
+  ],
+  "trainingSeason": "2024-25",
+  "validationSeason": "2025-26",
+  "sourceCommit": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88",
+  "models": {
+    "GK": {
+      "intercept": 0.008533,
+      "coefficients": {
+        "recentForm": 3.267357,
+        "pointsPerGame": -0.194832,
+        "expectedMinutes": 2.564221,
+        "fixtureDifficulty": 0.423454,
+        "homeAway": -0.072708,
+        "value": -0.815728,
+        "historicalVsOpponent": -0.267367
+      },
+      "pointsCalibration": [
+        {
+          "threshold": 0.013868,
+          "value": 0.032609
+        },
+        {
+          "threshold": 0.119732,
+          "value": 0.038647
+        },
+        {
+          "threshold": 0.298304,
+          "value": 0.142857
+        },
+        {
+          "threshold": 0.430317,
+          "value": 0.217391
+        },
+        {
+          "threshold": 0.620543,
+          "value": 0.358696
+        },
+        {
+          "threshold": 0.936223,
+          "value": 0.619565
+        },
+        {
+          "threshold": 1.134315,
+          "value": 0.978261
+        },
+        {
+          "threshold": 1.31626,
+          "value": 1
+        },
+        {
+          "threshold": 1.564143,
+          "value": 1.195652
+        },
+        {
+          "threshold": 1.832621,
+          "value": 1.608696
+        },
+        {
+          "threshold": 2.003471,
+          "value": 2.152174
+        },
+        {
+          "threshold": 2.257451,
+          "value": 2.434783
+        },
+        {
+          "threshold": 2.695893,
+          "value": 2.735507
+        },
+        {
+          "threshold": 2.877303,
+          "value": 3
+        },
+        {
+          "threshold": 3.206341,
+          "value": 3.05163
+        },
+        {
+          "threshold": 3.706395,
+          "value": 3.289855
+        },
+        {
+          "threshold": 4.600341,
+          "value": 3.903226
+        }
+      ],
+      "fivePlusCalibration": [
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0.013868,
+          "value": 0
+        },
+        {
+          "threshold": 0.086577,
+          "value": 0.001672
+        },
+        {
+          "threshold": 0.119732,
+          "value": 0.004348
+        },
+        {
+          "threshold": 0.298304,
+          "value": 0.012422
+        },
+        {
+          "threshold": 0.785651,
+          "value": 0.026087
+        },
+        {
+          "threshold": 0.958769,
+          "value": 0.043478
+        },
+        {
+          "threshold": 1.134555,
+          "value": 0.065217
+        },
+        {
+          "threshold": 1.322301,
+          "value": 0.086957
+        },
+        {
+          "threshold": 1.567762,
+          "value": 0.108696
+        },
+        {
+          "threshold": 2.257451,
+          "value": 0.15942
+        },
+        {
+          "threshold": 2.704543,
+          "value": 0.181159
+        },
+        {
+          "threshold": 2.814603,
+          "value": 0.217391
+        },
+        {
+          "threshold": 3.225002,
+          "value": 0.230435
+        },
+        {
+          "threshold": 3.807265,
+          "value": 0.246377
+        },
+        {
+          "threshold": 6.944825,
+          "value": 0.451613
+        }
+      ],
+      "recentFormBlend": 0.9,
+      "sampleSize": 2745
+    },
+    "DEF": {
+      "intercept": -0.331445,
+      "coefficients": {
+        "recentForm": 3.487201,
+        "pointsPerGame": 1.756049,
+        "expectedMinutes": 1.75766,
+        "fixtureDifficulty": 0.771547,
+        "homeAway": -0.043196,
+        "value": -1.403453,
+        "historicalVsOpponent": 0.191232
+      },
+      "pointsCalibration": [
+        {
+          "threshold": 0,
+          "value": 0.058219
+        },
+        {
+          "threshold": 0.031903,
+          "value": 0.068493
+        },
+        {
+          "threshold": 0.160598,
+          "value": 0.091096
+        },
+        {
+          "threshold": 0.208302,
+          "value": 0.191781
+        },
+        {
+          "threshold": 0.319446,
+          "value": 0.207192
+        },
+        {
+          "threshold": 0.550649,
+          "value": 0.2818
+        },
+        {
+          "threshold": 0.602799,
+          "value": 0.482877
+        },
+        {
+          "threshold": 0.785697,
+          "value": 0.655251
+        },
+        {
+          "threshold": 0.920574,
+          "value": 0.765411
+        },
+        {
+          "threshold": 1.094652,
+          "value": 0.924658
+        },
+        {
+          "threshold": 1.266867,
+          "value": 1.133562
+        },
+        {
+          "threshold": 1.349925,
+          "value": 1.376712
+        },
+        {
+          "threshold": 1.60335,
+          "value": 1.416667
+        },
+        {
+          "threshold": 1.865214,
+          "value": 1.765982
+        },
+        {
+          "threshold": 1.940104,
+          "value": 1.791096
+        },
+        {
+          "threshold": 2.099704,
+          "value": 2.318493
+        },
+        {
+          "threshold": 2.448455,
+          "value": 2.446062
+        },
+        {
+          "threshold": 2.56506,
+          "value": 2.476027
+        },
+        {
+          "threshold": 2.670115,
+          "value": 2.712329
+        },
+        {
+          "threshold": 2.804162,
+          "value": 2.753425
+        },
+        {
+          "threshold": 2.970655,
+          "value": 3.143836
+        },
+        {
+          "threshold": 3.185196,
+          "value": 3.157534
+        },
+        {
+          "threshold": 3.478909,
+          "value": 3.34589
+        },
+        {
+          "threshold": 5.17988,
+          "value": 3.359155
+        }
+      ],
+      "fivePlusCalibration": [
+        {
+          "threshold": 0.033091,
+          "value": 0.000978
+        },
+        {
+          "threshold": 0.11782,
+          "value": 0.00274
+        },
+        {
+          "threshold": 0.215612,
+          "value": 0.005708
+        },
+        {
+          "threshold": 0.299635,
+          "value": 0.018265
+        },
+        {
+          "threshold": 0.492522,
+          "value": 0.020548
+        },
+        {
+          "threshold": 0.55589,
+          "value": 0.020548
+        },
+        {
+          "threshold": 0.607705,
+          "value": 0.027397
+        },
+        {
+          "threshold": 0.929174,
+          "value": 0.056164
+        },
+        {
+          "threshold": 1.008942,
+          "value": 0.061644
+        },
+        {
+          "threshold": 1.104068,
+          "value": 0.082192
+        },
+        {
+          "threshold": 1.189769,
+          "value": 0.09589
+        },
+        {
+          "threshold": 1.278318,
+          "value": 0.10274
+        },
+        {
+          "threshold": 1.620146,
+          "value": 0.119863
+        },
+        {
+          "threshold": 1.873914,
+          "value": 0.157534
+        },
+        {
+          "threshold": 1.952131,
+          "value": 0.19863
+        },
+        {
+          "threshold": 2.031513,
+          "value": 0.212329
+        },
+        {
+          "threshold": 2.583926,
+          "value": 0.240868
+        },
+        {
+          "threshold": 2.694766,
+          "value": 0.246575
+        },
+        {
+          "threshold": 2.829433,
+          "value": 0.246575
+        },
+        {
+          "threshold": 3.229736,
+          "value": 0.335616
+        },
+        {
+          "threshold": 3.582795,
+          "value": 0.363014
+        },
+        {
+          "threshold": 8.209732,
+          "value": 0.408451
+        }
+      ],
+      "recentFormBlend": 0.9,
+      "sampleSize": 8756
+    },
+    "MID": {
+      "intercept": -0.173105,
+      "coefficients": {
+        "recentForm": 3.324068,
+        "pointsPerGame": 4.018657,
+        "expectedMinutes": 1.947077,
+        "fixtureDifficulty": 0.62621,
+        "homeAway": 0.005885,
+        "value": -2.334495,
+        "historicalVsOpponent": 0.050456
+      },
+      "pointsCalibration": [
+        {
+          "threshold": 0.008676,
+          "value": 0.029337
+        },
+        {
+          "threshold": 0.046265,
+          "value": 0.048469
+        },
+        {
+          "threshold": 0.181616,
+          "value": 0.063776
+        },
+        {
+          "threshold": 0.230899,
+          "value": 0.173469
+        },
+        {
+          "threshold": 0.353632,
+          "value": 0.19949
+        },
+        {
+          "threshold": 0.484218,
+          "value": 0.246811
+        },
+        {
+          "threshold": 0.53544,
+          "value": 0.438776
+        },
+        {
+          "threshold": 0.594125,
+          "value": 0.589286
+        },
+        {
+          "threshold": 0.658433,
+          "value": 0.642857
+        },
+        {
+          "threshold": 0.874768,
+          "value": 0.771259
+        },
+        {
+          "threshold": 1.027272,
+          "value": 1.02551
+        },
+        {
+          "threshold": 1.202965,
+          "value": 1.465561
+        },
+        {
+          "threshold": 1.446733,
+          "value": 1.471939
+        },
+        {
+          "threshold": 1.534757,
+          "value": 1.505102
+        },
+        {
+          "threshold": 1.90313,
+          "value": 1.853316
+        },
+        {
+          "threshold": 2.094969,
+          "value": 1.94898
+        },
+        {
+          "threshold": 2.191839,
+          "value": 2.104592
+        },
+        {
+          "threshold": 2.474691,
+          "value": 2.201531
+        },
+        {
+          "threshold": 2.591916,
+          "value": 2.744898
+        },
+        {
+          "threshold": 2.805576,
+          "value": 2.931122
+        },
+        {
+          "threshold": 3.039818,
+          "value": 3.118622
+        },
+        {
+          "threshold": 3.635856,
+          "value": 3.359694
+        },
+        {
+          "threshold": 4.707523,
+          "value": 3.802296
+        },
+        {
+          "threshold": 8.303242,
+          "value": 5.66185
+        }
+      ],
+      "fivePlusCalibration": [
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0.008676,
+          "value": 0
+        },
+        {
+          "threshold": 0.008676,
+          "value": 0
+        },
+        {
+          "threshold": 0.234255,
+          "value": 0.001276
+        },
+        {
+          "threshold": 0.358152,
+          "value": 0.007143
+        },
+        {
+          "threshold": 0.485371,
+          "value": 0.007653
+        },
+        {
+          "threshold": 0.540449,
+          "value": 0.010204
+        },
+        {
+          "threshold": 0.661651,
+          "value": 0.012755
+        },
+        {
+          "threshold": 0.877039,
+          "value": 0.030612
+        },
+        {
+          "threshold": 0.95716,
+          "value": 0.045918
+        },
+        {
+          "threshold": 1.031455,
+          "value": 0.056122
+        },
+        {
+          "threshold": 1.544977,
+          "value": 0.073129
+        },
+        {
+          "threshold": 2.005602,
+          "value": 0.097959
+        },
+        {
+          "threshold": 2.10511,
+          "value": 0.112245
+        },
+        {
+          "threshold": 2.208106,
+          "value": 0.117347
+        },
+        {
+          "threshold": 2.495466,
+          "value": 0.117347
+        },
+        {
+          "threshold": 2.712059,
+          "value": 0.206633
+        },
+        {
+          "threshold": 2.833118,
+          "value": 0.214286
+        },
+        {
+          "threshold": 3.237413,
+          "value": 0.231293
+        },
+        {
+          "threshold": 3.45223,
+          "value": 0.25
+        },
+        {
+          "threshold": 3.733588,
+          "value": 0.255102
+        },
+        {
+          "threshold": 4.11792,
+          "value": 0.295918
+        },
+        {
+          "threshold": 4.978192,
+          "value": 0.306122
+        },
+        {
+          "threshold": 14.69764,
+          "value": 0.526012
+        }
+      ],
+      "recentFormBlend": 0.9,
+      "sampleSize": 11737
+    },
+    "FWD": {
+      "intercept": -0.200107,
+      "coefficients": {
+        "recentForm": 3.484541,
+        "pointsPerGame": 0.338826,
+        "expectedMinutes": 3.292994,
+        "fixtureDifficulty": 0.590693,
+        "homeAway": 0.214356,
+        "value": -1.118817,
+        "historicalVsOpponent": -0.083032
+      },
+      "pointsCalibration": [
+        {
+          "threshold": 0,
+          "value": 0.020408
+        },
+        {
+          "threshold": 0.083778,
+          "value": 0.043084
+        },
+        {
+          "threshold": 0.120407,
+          "value": 0.05102
+        },
+        {
+          "threshold": 0.277709,
+          "value": 0.105867
+        },
+        {
+          "threshold": 0.4265,
+          "value": 0.170068
+        },
+        {
+          "threshold": 0.60236,
+          "value": 0.454082
+        },
+        {
+          "threshold": 0.812843,
+          "value": 0.809524
+        },
+        {
+          "threshold": 1.346088,
+          "value": 1.34949
+        },
+        {
+          "threshold": 1.500092,
+          "value": 1.489796
+        },
+        {
+          "threshold": 1.690575,
+          "value": 1.510204
+        },
+        {
+          "threshold": 1.866131,
+          "value": 1.591837
+        },
+        {
+          "threshold": 2.387081,
+          "value": 2.346939
+        },
+        {
+          "threshold": 2.929706,
+          "value": 2.44898
+        },
+        {
+          "threshold": 3.25079,
+          "value": 3.102041
+        },
+        {
+          "threshold": 4.128608,
+          "value": 3.897959
+        },
+        {
+          "threshold": 4.626836,
+          "value": 4.020408
+        },
+        {
+          "threshold": 5.006164,
+          "value": 4.387755
+        },
+        {
+          "threshold": 6.083026,
+          "value": 5.693878
+        },
+        {
+          "threshold": 6.72247,
+          "value": 8.666667
+        }
+      ],
+      "fivePlusCalibration": [
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0,
+          "value": 0
+        },
+        {
+          "threshold": 0.049262,
+          "value": 0
+        },
+        {
+          "threshold": 0.053724,
+          "value": 0
+        },
+        {
+          "threshold": 0.053724,
+          "value": 0
+        },
+        {
+          "threshold": 0.053724,
+          "value": 0
+        },
+        {
+          "threshold": 0.053724,
+          "value": 0
+        },
+        {
+          "threshold": 0.083778,
+          "value": 0
+        },
+        {
+          "threshold": 0.120407,
+          "value": 0
+        },
+        {
+          "threshold": 0.120407,
+          "value": 0
+        },
+        {
+          "threshold": 0.430063,
+          "value": 0.005831
+        },
+        {
+          "threshold": 0.489974,
+          "value": 0.020408
+        },
+        {
+          "threshold": 0.563427,
+          "value": 0.020408
+        },
+        {
+          "threshold": 0.602838,
+          "value": 0.020408
+        },
+        {
+          "threshold": 0.819968,
+          "value": 0.040816
+        },
+        {
+          "threshold": 1.379662,
+          "value": 0.091837
+        },
+        {
+          "threshold": 1.521466,
+          "value": 0.122449
+        },
+        {
+          "threshold": 1.880637,
+          "value": 0.122449
+        },
+        {
+          "threshold": 2.400301,
+          "value": 0.210884
+        },
+        {
+          "threshold": 2.942205,
+          "value": 0.22449
+        },
+        {
+          "threshold": 3.106501,
+          "value": 0.244898
+        },
+        {
+          "threshold": 3.265086,
+          "value": 0.285714
+        },
+        {
+          "threshold": 3.424872,
+          "value": 0.306122
+        },
+        {
+          "threshold": 3.740065,
+          "value": 0.336735
+        },
+        {
+          "threshold": 4.021749,
+          "value": 0.346939
+        },
+        {
+          "threshold": 4.709961,
+          "value": 0.37415
+        },
+        {
+          "threshold": 5.205069,
+          "value": 0.428571
+        },
+        {
+          "threshold": 7.498552,
+          "value": 0.55102
+        },
+        {
+          "threshold": 9.044534,
+          "value": 0.666667
+        }
+      ],
+      "recentFormBlend": 0.9,
+      "sampleSize": 2897
+    }
+  },
+  "validation": {
+    "samples": 28497,
+    "meanAbsoluteError": 1.0378531073446287,
+    "recentFormBaselineMeanAbsoluteError": 1.0512358025991289,
+    "rankCorrelation": 0.7241414693970013,
+    "recentFormBaselineRankCorrelation": 0.723059145376797,
+    "brierScore": 0.06715398434923787,
+    "baseRateBrierScore": 0.07858244000000912,
+    "expectedCalibrationError": 0.010170474084992286,
+    "captainHitRate": 0.4594594594594595,
+    "byPosition": {
+      "GK": {
+        "samples": 3286,
+        "meanAbsoluteError": 0.6041996348143628,
+        "rankCorrelation": 0.8121041614996306,
+        "recentFormBaselineRankCorrelation": 0.8251200718242713
+      },
+      "DEF": {
+        "samples": 9331,
+        "meanAbsoluteError": 1.2076411960132944,
+        "rankCorrelation": 0.6526043253681767,
+        "recentFormBaselineRankCorrelation": 0.6478667511968981
+      },
+      "MID": {
+        "samples": 12740,
+        "meanAbsoluteError": 1.0088854003139835,
+        "rankCorrelation": 0.7369995554925759,
+        "recentFormBaselineRankCorrelation": 0.7368373732568404
+      },
+      "FWD": {
+        "samples": 3140,
+        "meanAbsoluteError": 1.1046496815286608,
+        "rankCorrelation": 0.7806274446198138,
+        "recentFormBaselineRankCorrelation": 0.781443007554398
+      }
+    },
+    "doubleGameweeks": {
+      "samples": 416,
+      "meanAbsoluteError": 1.6300480769230776
+    },
+    "singleGameweeks": {
+      "samples": 28081,
+      "meanAbsoluteError": 1.029080160962925
+    },
+    "releaseGates": {
+      "maeBeatsRecentForm": true,
+      "rankBeatsRecentForm": true,
+      "brierBeatsBaseRate": true,
+      "calibrationWithinLimit": true
+    },
+    "releasePassed": true
+  },
+  "version": "1f3236a5dc6c",
+  "contentHash": "1f3236a5dc6cbdea402a3270d0f97929f72a235c3fb737135faa965fed4fdad3"
+}

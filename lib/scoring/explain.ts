@@ -271,25 +271,6 @@ function whyPickedText(
     if (value >= 0.7) return "Good value and expected minutes.";
     return `Selected for ${primaryLabel} and ${secondaryLabel}.`;
   }
-
-  if (fixture === "Good" && minutes === "Strong") {
-    return pickVariant(
-      ["Selected for expected minutes and fixture.", "Good expected minutes and fixture."],
-      seed,
-    );
-  }
-
-  if (value >= 0.7) {
-    return pickVariant(
-      ["Selected for value and expected minutes.", "Good value for price."],
-      seed,
-    );
-  }
-
-  if (minutes === "Likely") {
-    return "Selected for expected minutes and floor.";
-  }
-
   return `Selected for ${primaryLabel} and ${secondaryLabel}.`;
 }
 

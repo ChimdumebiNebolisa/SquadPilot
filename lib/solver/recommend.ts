@@ -16,7 +16,11 @@ export function hasLegalCaptainLinks(
 }
 
 function objectiveValue(player: ProjectedPlayer): number {
-  return player.projectedScore + (player.fivePlusPointsEstimate / 100) * 0.3;
+  return player.projectedScore + (player.fivePlusProbability / 100) * 0.3;
+}
+
+function projectedTeamTotal(startingXI: ProjectedPlayer[], captain: ProjectedPlayer): number {
+  return Number((startingXI.reduce((sum, player) => sum + player.projectedPoints, 0) + captain.projectedPoints).toFixed(1));
 }
 
 function normalizeInsightText(value: string): string {
@@ -221,6 +225,7 @@ function createMilpRecommendation(players: ProjectedPlayer[]): RecommendationRes
     captain,
     viceCaptain,
     budgetUsed,
+    projectedTotal: projectedTeamTotal(startingXI, captain),
     solver: {
       mode: "solver",
       status: "optimal_or_feasible",
@@ -339,6 +344,7 @@ export function fallbackRecommendation(players: ProjectedPlayer[]): Recommendati
     captain,
     viceCaptain,
     budgetUsed,
+    projectedTotal: projectedTeamTotal(startingXI, captain),
     solver: {
       mode: "fallback",
       status: "greedy_fallback",

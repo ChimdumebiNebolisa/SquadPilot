@@ -7,6 +7,7 @@ export interface RecommendationResult {
   captain: ProjectedPlayer;
   viceCaptain: ProjectedPlayer;
   budgetUsed: number;
+  projectedTotal: number;
   solver: {
     mode: "solver" | "fallback";
     status: string;

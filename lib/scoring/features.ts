@@ -1,15 +1,11 @@
 import type { HistoricalDataset } from "@/lib/historical/normalize";
-import { getFixturesForTeamAndEvent, opponentDefenceStrength } from "@/lib/fpl/fixtures";
+import { getFixturesForTeamAndEvent, opponentDefenceStrength, type TeamFixtureSummary } from "@/lib/fpl/fixtures";
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/lib/fpl/types";
+import { buildModelFeatures } from "@/lib/scoring/model-features";
 import type { PlayerFeatureVector } from "@/lib/scoring/types";
 
 function clamp(value: number, min = 0, max = 1): number {
   return Math.max(min, Math.min(max, value));
-}
-
-function normalizeRange(value: number, min: number, max: number): number {
-  if (max <= min) return 0;
-  return clamp((value - min) / (max - min));
 }
 
 export interface FeatureContext {
@@ -19,6 +15,7 @@ export interface FeatureContext {
   historical?: HistoricalDataset | null;
   opponentHistory?: OpponentHistoryView[];
   previousSeasonPointsPer90?: number | null;
+  fixtureSummary?: TeamFixtureSummary;
 }
 
 export interface PlayerFeatureResult {
@@ -67,15 +64,13 @@ export function extractFeaturesForPlayer(
     ? { gameweeksPlayed: contextOrGameweeks }
     : contextOrGameweeks;
   const nextGameweek = context.nextGameweek ?? 0;
-  const fixtureSummary = nextGameweek > 0
-    ? getFixturesForTeamAndEvent(player.teamId, nextGameweek, fixtures)
-    : { fixtures: [], fixtureCount: 0, averageDifficulty: null, homeCount: 0, awayCount: 0, status: "missing" as const };
+  const fixtureSummary = context.fixtureSummary ?? (nextGameweek > 0
+    ? getFixturesForTeamAndEvent(player.teamId, nextGameweek, fixtures, teams)
+    : { fixtures: [], fixtureCount: 0, averageDifficulty: null, homeCount: 0, awayCount: 0, status: "missing" as const });
   const opponentHistory = getOpponentHistory(player, fixtureSummary.fixtures, context);
   const opponent = teams.find((team) => team.id === fixtureSummary.fixtures[0]?.opponentTeamId);
   const firstFixtureIsHome = fixtureSummary.fixtures[0]?.isHome ?? null;
 
-  const recentForm = normalizeRange(player.form, 0, 10);
-  const pointsPerGame = normalizeRange(player.pointsPerGame, 0, 10);
   const availability = player.chanceOfPlayingNextRound !== null
     ? clamp(player.chanceOfPlayingNextRound / 100)
     : availabilityFromStatus(player.status);
@@ -88,8 +83,7 @@ export function extractFeaturesForPlayer(
   const expectedMinutes = clamp(availability * (startRate * averageStartMinutes + (1 - startRate) * averageSubMinutes));
 
   const averageDifficulty = fixtureSummary.averageDifficulty ?? 3;
-  const fixtureDifficulty = clamp((5 - averageDifficulty) / 4);
-  const homeAway = fixtureSummary.fixtureCount === 0
+  const homeFixtureFraction = fixtureSummary.fixtureCount === 0
     ? 0.5
     : fixtureSummary.homeCount / fixtureSummary.fixtureCount;
   const strengths = teams.flatMap((team) => [team.strengthOverallHome, team.strengthOverallAway]).filter((strength): strength is number => strength != null);
@@ -99,17 +93,25 @@ export function extractFeaturesForPlayer(
   const opponentStrength = opponentStrengthValue == null
     ? 0.5
     : clamp(1 - (maxStrength > minStrength ? (opponentStrengthValue - minStrength) / (maxStrength - minStrength) : 0.5));
-  const value = player.price > 0 ? clamp((player.pointsPerGame / player.price) / 1.2) : 0;
   const differential = clamp((25 - player.selectedByPercent) / 25);
   const health = player.chanceOfPlayingNextRound !== null ? availability : availabilityFromStatus(player.status);
   const fplExpectedPoints = clamp(player.epNext / 15);
   const attackingUpside = player.position === "MID" || player.position === "FWD" ? clamp(player.ictIndex / 150) : 0;
-  const historicalVsOpponent = opponentHistory.length
-    ? clamp(opponentHistory.reduce((sum, record) => {
+  const historicalOpponentRatio = opponentHistory.length
+    ? opponentHistory.reduce((sum, record) => {
         const baseline = record.baselinePointsPer90 ?? player.pointsPerGame;
         return sum + (baseline > 0 ? record.shrunkPointsPer90 / (baseline * 1.2) : 0.5);
-      }, 0) / opponentHistory.length)
+      }, 0) / opponentHistory.length
     : 0.5;
+  const modelFeatures = buildModelFeatures({
+    recentPointsPerMatch: player.form,
+    pointsPerGame: player.pointsPerGame,
+    expectedMinutesFraction: expectedMinutes,
+    averageFixtureDifficulty: averageDifficulty,
+    homeFixtureFraction,
+    price: player.price,
+    historicalOpponentRatio,
+  });
   const currentBaselinePointsPer90 = player.minutesPlayedSeason > 0
     ? (player.totalPoints / player.minutesPlayedSeason) * 90
     : player.pointsPerGame;
@@ -119,17 +121,11 @@ export function extractFeaturesForPlayer(
 
   return {
     features: {
-      recentForm,
-      pointsPerGame,
-      expectedMinutes,
-      fixtureDifficulty,
-      homeAway,
+      ...modelFeatures,
       opponentStrength,
-      value,
       differential,
       health,
       setPiece: setPieceScore(player),
-      historicalVsOpponent,
       historicalBaseline,
       // This is exposed as a baseline comparator. Its scoring weight is intentionally zero.
       fplExpectedPoints,

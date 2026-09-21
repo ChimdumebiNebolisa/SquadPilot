@@ -5,10 +5,12 @@ export type PlayerPosition = "GK" | "DEF" | "MID" | "FWD";
 export interface NormalizedPlayer {
   source: DataProvenance;
   id: number;
+  code: number;
   webName: string;
   firstName: string;
   lastName: string;
   teamId: number;
+  teamCode: number;
   position: PlayerPosition;
   price: number;
   totalPoints: number;
@@ -34,6 +36,7 @@ export interface NormalizedPlayer {
 export interface NormalizedTeam {
   source: DataProvenance;
   id: number;
+  code: number;
   name: string;
   shortName: string;
   strength: number | null;
@@ -62,17 +65,11 @@ export interface PlayerFixtureView {
   fixtureId: number;
   event: number;
   opponentTeamId: number;
+  opponentTeamCode: number;
   isHome: boolean;
   difficulty: number | null;
   kickoffTime: string | null;
   source: DataProvenance["source"];
-}
-
-export interface FplSyncStatus {
-  lastSuccessfulSync: string | null;
-  lastAttemptedSync: string | null;
-  lastError: string | null;
-  stale: boolean;
 }
 
 export interface CurrentTeamPlayer {

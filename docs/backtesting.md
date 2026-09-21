@@ -1,32 +1,30 @@
-# Walk-forward backtesting
+# Walk-forward training and validation
 
-SquadPilot’s historical path is deliberately reproducible and conservative. It uses only Vaastav match-level records imported with `scripts/sync-vaastav.mjs`. The evaluator must build a prediction input from records with `round < evaluatedRound`; the evaluated round’s points are used only as the outcome. Vaastav expected-point fields are excluded from the predictor because some snapshots contain post-match information.
+SquadPilot separates compact runtime aggregates under `data/historical/` from match-level training records under `data/backtest/`. Both are generated from the same pinned Vaastav commit and carry the source URLs and SHA-256 input hashes.
 
-## Run
+## Leakage boundary
+
+For an evaluated gameweek, feature state is built only from that player's records in earlier gameweeks. The current gameweek contributes fixture count, venue, and difficulty but no post-match player fields. FPL expected points are unavailable in the pinned historical source and remain excluded from model inputs in production.
+
+The model uses seven normalized inputs: recent form, season points per game, expected minutes, fixture difficulty, home share, value, and stable-code opponent history. A regularized model is trained separately for GK, DEF, MID, and FWD. Monotonic calibration is fitted on the training season for per-fixture points and the probability of a five-plus-point gameweek.
+
+## Reproduction
 
 ```bash
-node scripts/sync-vaastav.mjs --season 2023-24
-node scripts/sync-vaastav.mjs --season 2024-25
-npm run backtest -- --season 2024-25
+npm run verify:reimport
+npm run train:model
+npm run backtest
 ```
 
-The backtest command reads the checked-in compressed snapshot and reports the season and record count. The live recommendation path reads the same normalized snapshots for previous-season and opponent enrichment.
+`verify:reimport` downloads the pinned inputs again and requires the resulting gzip files to be byte-identical. `train:model` trains on 2024-25, validates on 2025-26, writes `data/model/scoring-model.json`, and fails if a release gate is missed. `backtest` independently reads the artifact and recomputes the validation report.
 
-## Required report
+## Release gates
 
-For each walk-forward gameweek, compare the projected points available before the deadline with actual FPL `total_points` and report:
+The held-out report must satisfy all of the following:
 
-- mean absolute projection error;
-- Spearman rank correlation;
-- captain recommendation hit rate;
-- start-estimate calibration by estimate bucket;
-- performance by GK, DEF, MID, and FWD;
-- single versus double gameweeks;
-- a simple recent-form baseline;
-- FPL `ep_next` as a separate baseline comparator when that field is present in the allowed historical snapshot.
+- model MAE is lower than the recent-form baseline;
+- mean gameweek Spearman rank correlation is higher than the baseline;
+- Brier score for 5+ points is lower than the validation base-rate Brier score;
+- expected calibration error is no greater than 0.08.
 
-The shipped walk-forward projection blends the last five match-point average (55%) with a minutes-adjusted points-per-90 estimate (45%), then multiplies by the scheduled fixture count. It is deliberately a small deterministic historical evaluator, not a claim that the live FPL feature weights are calibrated by these two seasons. The report also includes the simple recent-form-only baseline beside the projection.
-
-Calibration means comparing start-estimate buckets with observed starts. It does not turn the estimate into a probability claim automatically. Feature weights must be selected on a training period and evaluated on a later out-of-sample period; a one-season improvement is not sufficient evidence to increase a weight.
-
-The shipped repository contains historical snapshots. If a snapshot is deliberately removed in a development checkout, the UI and API report insufficient historical data; the production build rejects that state instead of silently shipping a live-only app.
+The report also includes captain 5+ hit rate, position slices, and single-/double-gameweek MAE. Those values are diagnostic rather than release gates.

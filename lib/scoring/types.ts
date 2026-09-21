@@ -55,14 +55,13 @@ export interface PlayerExplanation {
 export interface ProjectedPlayer extends NormalizedPlayer {
   projectedScore: number;
   projectedPoints: number;
-  /** Deterministic 0–100 estimate; it is not a calibrated probability. */
-  fivePlusPointsEstimate: number;
-  /** Backwards-compatible alias for API consumers; UI labels it as an estimate. */
-  chanceOfFivePlusPoints: number;
+  /** Held-out calibrated probability from 0–100. */
+  fivePlusProbability: number;
   /** Deterministic 0–100 start estimate, not a calibrated probability. */
-  chanceOfStarting: number;
+  startEstimatePercent: number;
   expectedMinutes: number;
   fixtureCount: number;
+  fixtureStatus: "scheduled";
   upcomingFixtures: PlayerFixtureView[];
   opponentTeamId?: number | null;
   opponentHistory: OpponentHistoryView[];

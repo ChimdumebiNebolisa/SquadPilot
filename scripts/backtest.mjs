@@ -1,127 +1,19 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { gunzip } from "node:zlib";
-import { promisify } from "node:util";
+import { buildWalkForwardSamples, evaluateModels, loadTrainingSeason } from "./modeling.mjs";
 
-const season = process.argv[process.argv.indexOf("--season") + 1] || "2024-25";
-const file = join(process.cwd(), "data", "historical", `${season}.json.gz`);
-const gunzipAsync = promisify(gunzip);
-let dataset;
-try {
-  dataset = JSON.parse((await gunzipAsync(await readFile(file))).toString("utf8"));
-} catch {
-  throw new Error(`Historical snapshot ${season}.json.gz is unavailable. Run npm run sync:historical -- --season ${season}.`);
-}
-const records = dataset.performances || [];
-const rounds = [...new Set(records.map((record) => record.source.gameweek).filter(Number.isFinite))].sort((a, b) => a - b);
-
-function mean(values) {
-  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
-}
-
-function rank(values) {
-  const ordered = [...values].sort((left, right) => right.value - left.value);
-  const ranks = new Map(ordered.map((item, index) => [item.key, index + 1]));
-  return values.map((item) => ranks.get(item.key) || 0);
-}
-
-function correlation(left, right) {
-  if (left.length < 2 || left.length !== right.length) return null;
-  const leftMean = mean(left);
-  const rightMean = mean(right);
-  const numerator = left.reduce((sum, value, index) => sum + (value - leftMean) * (right[index] - rightMean), 0);
-  const leftSpread = Math.sqrt(left.reduce((sum, value) => sum + (value - leftMean) ** 2, 0));
-  const rightSpread = Math.sqrt(right.reduce((sum, value) => sum + (value - rightMean) ** 2, 0));
-  return leftSpread && rightSpread ? numerator / leftSpread / rightSpread : null;
-}
-
-const errors = [];
-const recentFormErrors = [];
-const projectedRanks = [];
-const actualRanks = [];
-const recentFormRanks = [];
-const captainHits = [];
-const recentFormCaptainHits = [];
-const startBuckets = new Map();
-const positionErrors = new Map();
-const doubleGameweekErrors = [];
-const singleGameweekErrors = [];
-for (const round of rounds) {
-  const prior = records.filter((record) => record.source.gameweek < round);
-  const current = records.filter((record) => record.source.gameweek === round);
-  const priorByPlayer = new Map();
-  for (const record of prior) {
-    const history = priorByPlayer.get(record.playerId) || [];
-    history.push(record);
-    priorByPlayer.set(record.playerId, history);
-  }
-  const outcomes = new Map();
-  for (const record of current) {
-    const outcome = outcomes.get(record.playerId) || { points: 0, starts: 0, fixtures: 0, position: record.position || "unknown" };
-    outcome.points += Number(record.totalPoints) || 0;
-    outcome.starts += Number(record.starts) || 0;
-    outcome.fixtures += 1;
-    outcomes.set(record.playerId, outcome);
-  }
-  const rows = [...outcomes.entries()].map(([playerId, outcome]) => {
-    const history = (priorByPlayer.get(playerId) || []).slice(-5);
-    const recentFormPerFixture = mean(history.map((record) => Number(record.totalPoints) || 0)) || 0;
-    const priorMinutes = history.reduce((sum, record) => sum + (Number(record.minutes) || 0), 0);
-    const priorPoints = history.reduce((sum, record) => sum + (Number(record.totalPoints) || 0), 0);
-    const priorFixtures = history.length;
-    const pointsPer90 = priorMinutes > 0 ? (priorPoints / priorMinutes) * 90 : recentFormPerFixture;
-    const expectedMinutes = priorFixtures > 0 ? priorMinutes / priorFixtures : 0;
-    const minutesAdjustedPerFixture = pointsPer90 * expectedMinutes / 90;
-    const deterministicPerFixture = recentFormPerFixture * 0.55 + minutesAdjustedPerFixture * 0.45;
-    return {
-      playerId,
-      outcome,
-      projection: deterministicPerFixture * outcome.fixtures,
-      recentFormProjection: recentFormPerFixture * outcome.fixtures,
-      startEstimate: history.length ? mean(history.map((record) => Number(record.starts) > 0 ? 100 : 0)) : 0,
-    };
-  });
-  if (!rows.length) continue;
-  errors.push(...rows.map((row) => Math.abs(row.projection - row.outcome.points)));
-  recentFormErrors.push(...rows.map((row) => Math.abs(row.recentFormProjection - row.outcome.points)));
-  projectedRanks.push(...rank(rows.map((row) => ({ key: row.playerId, value: row.projection }))));
-  recentFormRanks.push(...rank(rows.map((row) => ({ key: row.playerId, value: row.recentFormProjection }))));
-  actualRanks.push(...rank(rows.map((row) => ({ key: row.playerId, value: row.outcome.points }))));
-  const captain = [...rows].sort((left, right) => right.projection - left.projection)[0];
-  const recentFormCaptain = [...rows].sort((left, right) => right.recentFormProjection - left.recentFormProjection)[0];
-  const actualBest = [...rows].sort((left, right) => right.outcome.points - left.outcome.points)[0];
-  captainHits.push(captain?.playerId === actualBest?.playerId ? 1 : 0);
-  recentFormCaptainHits.push(recentFormCaptain?.playerId === actualBest?.playerId ? 1 : 0);
-  for (const row of rows) {
-    const bucket = Math.min(90, Math.floor(row.startEstimate / 10) * 10);
-    const item = startBuckets.get(bucket) || { predicted: [], started: [] };
-    item.predicted.push(row.startEstimate);
-    item.started.push(row.outcome.starts > 0 ? 1 : 0);
-    startBuckets.set(bucket, item);
-    const position = row.outcome.position;
-    const positionItem = positionErrors.get(position) || [];
-    positionItem.push(Math.abs(row.projection - row.outcome.points));
-    positionErrors.set(position, positionItem);
-    if (row.outcome.fixtures > 1) doubleGameweekErrors.push(Math.abs(row.projection - row.outcome.points));
-    else singleGameweekErrors.push(Math.abs(row.projection - row.outcome.points));
-  }
-}
-
+const artifact = JSON.parse(await readFile(join(process.cwd(), "data", "model", "scoring-model.json"), "utf8"));
+const validationSnapshot = await loadTrainingSeason(artifact.validationSeason);
+const validation = evaluateModels(artifact.models, buildWalkForwardSamples(validationSnapshot.performances));
 console.log(JSON.stringify({
-  season,
-  records: records.length,
-  gameweeks: rounds.length,
-  meanAbsoluteProjectionError: mean(errors),
-  rankCorrelation: correlation(projectedRanks, actualRanks),
-  captainRecommendationHitRate: mean(captainHits),
-  recentFormBaselineMeanAbsoluteProjectionError: mean(recentFormErrors),
-  recentFormBaselineRankCorrelation: correlation(recentFormRanks, actualRanks),
-  recentFormBaselineCaptainRecommendationHitRate: mean(recentFormCaptainHits),
-  startingEstimateCalibration: [...startBuckets.entries()].map(([bucket, values]) => ({ bucket, averageEstimate: mean(values.predicted), observedStartRate: mean(values.started), sample: values.started.length })),
-  performanceByPosition: Object.fromEntries([...positionErrors.entries()].map(([position, values]) => [position, { meanAbsoluteProjectionError: mean(values), sample: values.length }])),
-  doubleGameweekMeanAbsoluteProjectionError: mean(doubleGameweekErrors),
-  singleGameweekMeanAbsoluteProjectionError: mean(singleGameweekErrors),
-  projection: "55% last-five match-point average plus 45% minutes-adjusted points-per-90, multiplied by the scheduled fixture count; every input is from gameweeks before the evaluated round",
-  recentFormBaseline: "last-five historical match-point average multiplied by the scheduled fixture count",
-  fplEpNextComparison: { status: "unavailable", reason: "The allowed Vaastav snapshots do not contain FPL ep_next. It is excluded rather than reconstructed from post-match fields." },
+  modelVersion: artifact.version,
+  trainingSeason: artifact.trainingSeason,
+  validationSeason: artifact.validationSeason,
+  validation,
+  fplExpectedPointsComparator: {
+    status: "not-available-in-source-snapshot",
+    usage: "comparator-only; never a model input",
+  },
 }, null, 2));
+
+if (process.argv.includes("--gate") && !validation.releasePassed) process.exitCode = 1;

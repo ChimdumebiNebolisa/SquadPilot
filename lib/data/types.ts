@@ -17,11 +17,16 @@ export interface DataProvenance {
 
 export interface PlayerMatchPerformance {
   source: DataProvenance;
-  playerId: number;
+  /** Season-local FPL element id. Never use this across seasons. */
+  sourcePlayerId: number;
+  /** Stable FPL player code used for cross-season identity. */
+  playerCode: number;
   playerName: string | null;
   position: string | null;
-  teamId: number | null;
-  opponentTeamId: number | null;
+  sourceTeamId: number | null;
+  teamCode: number | null;
+  sourceOpponentTeamId: number | null;
+  opponentTeamCode: number | null;
   wasHome: boolean | null;
   minutes: number;
   starts: number;
@@ -34,7 +39,7 @@ export interface PlayerMatchPerformance {
 
 export interface PlayerSeasonAggregate {
   source: DataProvenance;
-  playerId: number;
+  playerCode: number;
   playerName: string | null;
   season: string;
   matches: number;
@@ -50,9 +55,9 @@ export interface PlayerSeasonAggregate {
 
 export interface PlayerOpponentAggregate {
   source: DataProvenance;
-  playerId: number;
+  playerCode: number;
   playerName: string | null;
-  opponentTeamId: number;
+  opponentTeamCode: number;
   matches: number;
   starts: number;
   minutes: number;

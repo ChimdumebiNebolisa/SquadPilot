@@ -2,16 +2,18 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import type { DataAvailability } from "@/lib/data/types";
-import type { HistoricalDataset } from "@/lib/historical/normalize";
+import { indexHistoricalDataset, type HistoricalDataset } from "@/lib/historical/normalize";
 
 interface HistoricalFile {
+  schemaVersion?: number;
   season?: string;
-  performances?: HistoricalDataset["performances"];
+  recordCount?: number;
   seasonAggregates?: HistoricalDataset["seasonAggregates"];
   opponentAggregates?: HistoricalDataset["opponentAggregates"];
 }
 
 let cachedDataset: HistoricalDataset | null | undefined;
+let cachedRecordCount = 0;
 
 export function loadHistoricalDataset(): HistoricalDataset | null {
   if (cachedDataset !== undefined) return cachedDataset;
@@ -21,31 +23,36 @@ export function loadHistoricalDataset(): HistoricalDataset | null {
     return cachedDataset;
   }
 
-  const combined: HistoricalDataset = { performances: [], seasonAggregates: [], opponentAggregates: [] };
+  const seasonAggregates: HistoricalDataset["seasonAggregates"] = [];
+  const opponentAggregates: HistoricalDataset["opponentAggregates"] = [];
   for (const fileName of readdirSync(directory).filter((name) => name.endsWith(".json.gz") || name.endsWith(".json"))) {
     try {
       const bytes = readFileSync(join(directory, fileName));
       const text = fileName.endsWith(".gz") ? gunzipSync(bytes).toString("utf8") : bytes.toString("utf8");
       const parsed = JSON.parse(text) as HistoricalFile;
-      combined.performances.push(...(parsed.performances ?? []));
-      combined.seasonAggregates.push(...(parsed.seasonAggregates ?? []));
-      combined.opponentAggregates.push(...(parsed.opponentAggregates ?? []));
+      if (parsed.schemaVersion !== 2) continue;
+      seasonAggregates.push(...(parsed.seasonAggregates ?? []));
+      opponentAggregates.push(...(parsed.opponentAggregates ?? []));
+      cachedRecordCount += parsed.recordCount ?? 0;
     } catch {
       // A corrupt snapshot should not take down the live recommendation route; the build check
       // prevents a deployment from shipping with no valid snapshot at all.
     }
   }
 
-  cachedDataset = combined.performances.length > 0 ? combined : null;
+  cachedDataset = seasonAggregates.length > 0
+    ? indexHistoricalDataset([], seasonAggregates, opponentAggregates)
+    : null;
   return cachedDataset;
 }
 
 export function getHistoricalAvailability(): { status: DataAvailability; records: number } {
   const dataset = loadHistoricalDataset();
   if (!dataset) return { status: "missing", records: 0 };
-  return { status: "available", records: dataset.performances.length };
+  return { status: "available", records: cachedRecordCount };
 }
 
 export function resetHistoricalDatasetCache(): void {
   cachedDataset = undefined;
+  cachedRecordCount = 0;
 }

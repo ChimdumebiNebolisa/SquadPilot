@@ -13,7 +13,9 @@ export function getFixturesForTeamAndEvent(
   teamId: number,
   eventId: number,
   fixtures: NormalizedFixture[],
+  teams: NormalizedTeam[] = [],
 ): TeamFixtureSummary {
+  const teamCodeById = new Map(teams.map((team) => [team.id, team.code]));
   const teamFixtures = fixtures
     .filter((fixture) => fixture.event === eventId && (fixture.teamH === teamId || fixture.teamA === teamId))
     .map((fixture) => {
@@ -22,6 +24,7 @@ export function getFixturesForTeamAndEvent(
         fixtureId: fixture.id,
         event: eventId,
         opponentTeamId: isHome ? fixture.teamA : fixture.teamH,
+        opponentTeamCode: teamCodeById.get(isHome ? fixture.teamA : fixture.teamH) ?? 0,
         isHome,
         difficulty: isHome ? fixture.teamHDifficulty : fixture.teamADifficulty,
         kickoffTime: fixture.kickoffTime,
