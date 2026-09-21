@@ -26,6 +26,7 @@ import {
   SCORING_MODEL_VALIDATION_SEASON,
   SCORING_MODEL_VERSION,
 } from "@/lib/scoring/model";
+import { startOutlookLabel } from "@/lib/scoring/start-outlook";
 import type { ProjectedPlayer } from "@/lib/scoring/types";
 import type { PlayerView } from "@/lib/recommendation/types";
 import { buildRecommendation, chooseBestStartingXI } from "@/lib/solver/recommend";
@@ -219,7 +220,7 @@ function buildUserTeamView(
       .map((player) => ({
         playerId: player.id,
         webName: player.webName,
-        reason: `start estimate ${player.startEstimatePercent}%`,
+        reason: startOutlookLabel(player.startEstimatePercent).toLowerCase(),
       })),
     comparison: {
       added: comparisonAvailable ? [...recommendedIds].filter((id) => !currentIds.has(id)) : [],

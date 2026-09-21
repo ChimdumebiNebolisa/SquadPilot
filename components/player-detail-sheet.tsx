@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from "react";
 import type { PlayerView } from "@/lib/recommendation/types";
+import { startOutlookLabel } from "@/lib/scoring/start-outlook";
 
 export interface PlayerDetailSheetProps {
   player: PlayerView | null;
@@ -80,10 +81,10 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
         <p className="mt-3 text-xl font-bold tabular-nums text-brand">{player.projectedPoints.toFixed(1)} pts</p>
 
         <dl className="mt-4 space-y-2 text-xs">
-          <div className="flex justify-between gap-3"><dt className="text-muted">Start estimate (heuristic)</dt><dd>{Math.round(player.startEstimatePercent)}%</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-muted">Starting outlook (heuristic)</dt><dd>{startOutlookLabel(player.startEstimatePercent)}</dd></div>
           <div className="flex justify-between gap-3"><dt className="text-muted">Expected minutes</dt><dd>{expectedMinutesDisplay(player)}</dd></div>
           <div className="flex justify-between gap-3"><dt className="text-muted">Fixture difficulty</dt><dd>{fixtureDifficulty1To5(player)} / 5</dd></div>
-          <div className="flex justify-between gap-3"><dt className="text-muted">Calibrated 5+ probability</dt><dd>{Math.round(player.fivePlusProbability)}%</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-muted">Chance of 5+ GW points (model estimate)</dt><dd>{Math.round(player.fivePlusProbability)}%</dd></div>
         </dl>
 
         <div className="mt-4 space-y-1.5 text-[11px] leading-relaxed text-muted">
