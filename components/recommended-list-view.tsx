@@ -114,7 +114,6 @@ export function RecommendedListView({
             teamShortNames={teamShortNames}
             selectedPlayerId={selectedPlayerId}
             onSelect={onSelect}
-            variant="list"
           />
         ))}
       </div>
@@ -132,7 +131,6 @@ export function RecommendedListView({
             teamShortNames={teamShortNames}
             selectedPlayerId={selectedPlayerId}
             onSelect={onSelect}
-            variant="list"
             slotLabel={`B${index + 1}`}
           />
         ))}

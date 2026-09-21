@@ -15,8 +15,6 @@
   --captain: #f5cf59;
   --vice: #75c8ff;
   --accent-warm: #e8965a;
-  --pitch-surface: #0c1a14;
-  --pitch-line: rgba(255, 255, 255, 0.08);
   --card-radius: 16px;
 }
 
@@ -35,7 +33,6 @@
   --color-captain: var(--captain);
   --color-vice: var(--vice);
   --color-accent-warm: var(--accent-warm);
-  --color-pitch-surface: var(--pitch-surface);
   --radius-card: var(--card-radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -51,13 +48,6 @@ body {
     radial-gradient(1300px 720px at 50% 118%, rgba(58, 162, 117, 0.05), transparent 66%);
 }
 
-.football-grid {
-  background-image:
-    linear-gradient(rgba(152, 164, 188, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(152, 164, 188, 0.06) 1px, transparent 1px);
-  background-size: 34px 34px;
-}
-
 .premium-panel {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0) 42%),
@@ -67,177 +57,48 @@ body {
     0 12px 34px rgba(3, 8, 18, 0.3);
 }
 
-.premium-panel-elevated {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.028) 0%, rgba(255, 255, 255, 0) 46%),
-    var(--panel-elevated);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.035),
-    0 14px 36px rgba(2, 6, 14, 0.4);
-}
-
-.pitch-surface {
-  position: relative;
-  overflow: hidden;
-  background:
-    radial-gradient(110% 80% at 50% -8%, rgba(255, 255, 255, 0.03), transparent 65%),
-    linear-gradient(180deg, rgba(58, 162, 117, 0.06) 0%, rgba(58, 162, 117, 0.015) 55%, rgba(58, 162, 117, 0.045) 100%),
-    var(--panel-elevated);
-}
-
-.pitch-surface::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(152, 164, 188, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(152, 164, 188, 0.027) 1px, transparent 1px);
-  background-size: 36px 36px;
-}
-
-.pitch-surface::after {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px solid rgba(152, 164, 188, 0.18);
-  border-radius: 16px;
-  pointer-events: none;
-}
-
-/* Perspective pitch (hero) – spatial depth, receding plane */
-.perspective-pitch-wrapper {
-  perspective: 720px;
-  perspective-origin: 50% 28%;
-  --pitch-tile-width: 120px;
-}
-
-.perspective-pitch-surface {
-  position: relative;
-  overflow: hidden;
-  transform: rotateX(4deg);
-  transform-origin: 50% 100%;
-  /* Top darker (far), bottom slightly brighter (near) for depth */
-  background:
-    radial-gradient(100% 60% at 50% -5%, rgba(255, 255, 255, 0.04), transparent 55%),
-    linear-gradient(180deg, #081410 0%, #0a1812 35%, #0c1a14 70%, #0e1e16 100%);
-  box-shadow: inset 0 -20px 40px rgba(0, 0, 0, 0.25);
-}
-
-/* Softer, sparser grid so it doesn’t compete with depth */
-.perspective-pitch-surface::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(var(--pitch-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--pitch-line) 1px, transparent 1px);
-  background-size: 48px 48px;
-  opacity: 0.35;
-}
-
-.perspective-pitch-surface::after {
-  content: "";
-  position: absolute;
-  inset: 12px;
-  border: 1px solid var(--pitch-line);
-  border-radius: 16px;
-  pointer-events: none;
-  opacity: 0.7;
-}
-
-/* Mobile: gentler perspective, horizontal scroll if needed, keep tile width readable */
-@media (max-width: 479px) {
-  .perspective-pitch-surface {
-    transform: rotateX(2.5deg);
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-}
-
-/* Midfield row: full width, flexible columns (same as bench); 8px gap so center margin adds space only between 2–3 and 3–4 */
-.pitch-row--mid {
-  width: 100%;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-
-/* Inverted V stagger when cramped (4 or 5 players): edges low, center high; symmetric; 3- and 2-player rows stay straight */
-.pitch-row--stagger-4 > *:nth-child(1) { transform: translateY(12px); }
-.pitch-row--stagger-4 > *:nth-child(2) { transform: translateY(-6px) translateX(16px); }
-.pitch-row--stagger-4 > *:nth-child(3) { transform: translateY(-6px) translateX(-16px); }
-.pitch-row--stagger-4 > *:nth-child(4) { transform: translateY(12px); }
-
-/* 5-player: base inverted V for all 5-player outfield rows */
-.pitch-row--stagger-5 > *:nth-child(1) { transform: translateY(12px); }
-.pitch-row--stagger-5 > *:nth-child(2) { transform: translateY(6px) translateX(20px); }
-.pitch-row--stagger-5 > *:nth-child(3) { transform: translateY(-12px); }
-.pitch-row--stagger-5 > *:nth-child(4) { transform: translateY(6px) translateX(-20px); }
-.pitch-row--stagger-5 > *:nth-child(5) { transform: translateY(12px); }
-
-/* Midfield 5 only: tighter wings (10px translateX) + extra space between 2-3 and 3-4; center card content centred */
-.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(2) { transform: translateY(6px) translateX(10px); margin-right: 12px; }
-.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(3) { margin-left: 12px; margin-right: 12px; justify-content: center; }
-.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(3) > *:nth-child(2) { align-items: center; text-align: center; }
-.pitch-row--mid.pitch-row--stagger-5 > *:nth-child(4) { transform: translateY(6px) translateX(-10px); margin-left: 12px; }
-
-/* Bottom sheet */
-.bottom-sheet-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 40;
-  transition: opacity 200ms ease-out;
-}
-
-.bottom-sheet-panel {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50;
-  max-height: 42vh;
-  border-radius: 16px 16px 0 0;
-  transform: translateY(100%);
-  transition: transform 280ms cubic-bezier(0.32, 0.72, 0, 1);
-  overflow: hidden;
-}
-
-.bottom-sheet-panel.open {
-  transform: translateY(0);
-}
-
-/* Decision drawer: flat, tight, not card-stacked */
-.bottom-sheet-panel-inner {
-  background: var(--panel);
-  border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
-}
-
-@media (min-width: 768px) {
-  .bottom-sheet-panel {
-    left: 50%;
-    right: auto;
-    max-width: 420px;
-    max-height: 280px;
-    transform: translate(-50%, 100%);
-  }
-
-  .bottom-sheet-panel.open {
-    transform: translate(-50%, 0);
-  }
-}
-
-/* Player tile: slight lift so tiles read above pitch */
-.perspective-pitch-surface .premium-panel {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 4px 12px rgba(0, 0, 0, 0.35);
-}
-
 .player-tile-selected {
   transform: translateY(-2px);
   transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+
+.player-dialog {
+  width: min(100% - 1.5rem, 28rem);
+  max-height: min(80vh, 42rem);
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  color: var(--foreground);
+  background: transparent;
+  border: 0;
+}
+
+.player-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.66);
+  backdrop-filter: blur(2px);
+}
+
+.player-dialog-panel {
+  max-height: min(80vh, 42rem);
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem;
+  background: var(--panel);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+  animation: dialog-enter 180ms ease-out;
+}
+
+@keyframes dialog-enter {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
