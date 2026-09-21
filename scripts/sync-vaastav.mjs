@@ -85,6 +85,9 @@ function stableJson(value) {
 async function writeGzipAtomically(path, value) {
   const temporary = `${path}.tmp`;
   const bytes = gzipSync(stableJson(value), { level: 9, mtime: 0 });
+  // zlib writes a platform-specific gzip OS byte; normalize it for identical
+  // artifacts on Windows, Linux, and macOS.
+  bytes[9] = 255;
   await writeFile(temporary, bytes);
   await rename(temporary, path);
 }
