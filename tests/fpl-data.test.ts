@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { recordsAvailableBefore, recentPointsBefore } from "@/lib/historical/backtest";
-import { lookupOpponentHistory, normalizeVaastavRows } from "@/lib/historical/normalize";
+import {
+  indexHistoricalDataset,
+  lookupOpponentHistory,
+  lookupOpponentHistoryForSeason,
+  normalizeVaastavRows,
+  seasonAggregate,
+} from "@/lib/historical/normalize";
 import { getHistoricalAvailability } from "@/lib/historical/store";
 import { getFixturesForTeamAndEvent } from "@/lib/fpl/fixtures";
 import {
@@ -112,6 +118,25 @@ test("renamed players with the same stable code retain their history", () => {
   const record = lookupOpponentHistory(dataset, 3003, 20, 6);
   assert.equal(record?.sampleSize, 2);
   assert.equal(record?.totalPoints, 12);
+});
+
+test("season-aware lookups never blend or fall back to older player history", () => {
+  const older = normalizeVaastavRows([
+    { element: 8, player_code: 3003, name: "Old Name", fixture: 1, round: 1, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 12 },
+  ], "2024-25", "2026-01-01T00:00:00Z");
+  const previous = normalizeVaastavRows([
+    { element: 9, player_code: 3003, name: "New Name", fixture: 2, round: 1, team_code: 10, opponent_team_code: 20, minutes: 90, starts: 1, total_points: 4 },
+  ], "2025-26", "2026-01-01T00:00:00Z");
+  const dataset = indexHistoricalDataset(
+    [...older.performances, ...previous.performances],
+    [...older.seasonAggregates, ...previous.seasonAggregates],
+    [...older.opponentAggregates, ...previous.opponentAggregates],
+  );
+
+  assert.equal(seasonAggregate(dataset, 3003, "2025-26")?.totalPoints, 4);
+  assert.equal(lookupOpponentHistoryForSeason(dataset, 3003, 20, "2025-26")?.totalPoints, 4);
+  assert.equal(seasonAggregate(dataset, 9999, "2025-26"), null);
+  assert.equal(lookupOpponentHistoryForSeason(dataset, 3003, 30, "2025-26"), null);
 });
 
 test("malformed bootstrap players fail instead of becoming unknown free forwards", () => {

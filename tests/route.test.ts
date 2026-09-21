@@ -104,6 +104,7 @@ test("generic route returns compact response schema v2 and captain-inclusive tot
     assert.equal(payload.data.scoring.fivePlusMetric.featureParity, "production-replay");
     assert.equal(payload.data.scoring.fivePlusMetric.availabilityTreatment, "reported-separately");
     assert.equal(payload.data.scoring.fivePlusMetric.doubleGameweekEvidence, "limited-sample");
+    assert.equal(payload.data.scoring.fivePlusMetric.historyTreatment, "previous-season-player-and-opponent");
     assert.equal("startingXI" in payload.data.recommendation, false);
     const byId = new Map<number, { id: number; projectedPoints: number }>(payload.data.recommendation.squad.map((player: { id: number; projectedPoints: number }) => [player.id, player]));
     const projectedPoints = (id: number) => {

@@ -10,6 +10,7 @@ import {
 } from "@/lib/fpl/normalize";
 import { normalizeCurrentUserTeam } from "@/lib/fpl/team";
 import type { NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/lib/fpl/types";
+import type { PlayerOpponentAggregate, PlayerSeasonAggregate } from "@/lib/data/types";
 import { normalizeVaastavRows } from "@/lib/historical/normalize";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
@@ -172,6 +173,74 @@ test("feature extraction covers availability, set pieces, no-fixture and opponen
   });
   assert.deepEqual(available.fivePlusFeatures, result.fivePlusFeatures);
   assert.notEqual(available.expectedMinutes, result.expectedMinutes);
+});
+
+test("five-plus features use previous-season performance and partial DGW opponent coverage", () => {
+  const historicalSource = {
+    ...source,
+    source: "vaastav-historical" as const,
+    season: "2025-26",
+  };
+  const previousSeason: PlayerSeasonAggregate = {
+    source: historicalSource,
+    playerCode: 101,
+    playerName: "Test",
+    season: "2025-26",
+    matches: 38,
+    starts: 30,
+    minutes: 2_700,
+    totalPoints: 150,
+    goals: 10,
+    assists: 5,
+    pointsPer90: 5,
+    homeMatches: 19,
+    awayMatches: 19,
+  };
+  const opponentHistory: PlayerOpponentAggregate = {
+    source: historicalSource,
+    playerCode: 101,
+    playerName: "Test",
+    opponentTeamCode: 20,
+    matches: 3,
+    starts: 3,
+    minutes: 270,
+    totalPoints: 18,
+    pointsPer90: 6,
+    shrunkPointsPer90: 6,
+    homeMatches: 2,
+    awayMatches: 1,
+    sampleSize: 3,
+    dataStatus: "available",
+  };
+  const fixtures = normalizeFixtures([
+    { id: 1, event: 2, team_h: 1, team_a: 2, team_h_difficulty: 2, team_a_difficulty: 4 },
+    { id: 2, event: 2, team_h: 3, team_a: 1, team_h_difficulty: 3, team_a_difficulty: 2 },
+  ]);
+  const result = extractFeaturesForPlayer(player(), [team(1), team(2), team(3)], fixtures, {
+    gameweeksPlayed: 10,
+    completedTeamFixtures: 10,
+    nextGameweek: 2,
+    fivePlusPreviousSeason: previousSeason,
+    fivePlusOpponentHistory: [opponentHistory],
+  });
+
+  assert.equal(result.fivePlusFeatures.previousSeasonPointsPer90, 0.5);
+  assert.equal(result.fivePlusFeatures.previousSeasonAvailable, 1);
+  assert.equal(result.fivePlusFeatures.previousSeasonSampleStrength, 1);
+  assert.equal(result.fivePlusFeatures.opponentHistoryPointsPer90, 0.6);
+  assert.equal(result.fivePlusFeatures.opponentHistorySampleStrength, 0.25);
+  assert.equal(result.fivePlusFeatures.opponentHistoryCoverage, 0.5);
+  assert.ok(result.fivePlusFeatures.historyAdjustedPointsPerFixture > 0.2);
+
+  const missing = extractFeaturesForPlayer(player(), [team(1), team(2), team(3)], fixtures, {
+    gameweeksPlayed: 10,
+    completedTeamFixtures: 10,
+    nextGameweek: 2,
+  });
+  assert.equal(missing.fivePlusFeatures.previousSeasonAvailable, 0);
+  assert.equal(missing.fivePlusFeatures.previousSeasonPointsPer90, 0);
+  assert.equal(missing.fivePlusFeatures.opponentHistoryCoverage, 0);
+  assert.equal(missing.fivePlusFeatures.historyAdjustedPointsPerFixture, 0.2);
 });
 
 test("historical normalization rejects incomplete identity and handles partial records", () => {

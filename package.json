@@ -10,7 +10,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test \"tests/**/*.test.ts\"",
-    "test:coverage": "tsx --test --experimental-test-coverage --test-coverage-lines=85 --test-coverage-branches=80 \"tests/**/*.test.ts\"",
+    "test:coverage": "tsx --test --experimental-test-coverage --test-coverage-exclude=\"scripts/**\" --test-coverage-lines=85 --test-coverage-branches=80 \"tests/**/*.test.ts\"",
     "sync:historical": "node scripts/sync-vaastav.mjs",
     "verify:historical": "node scripts/verify-historical.mjs",
     "verify:reimport": "node scripts/verify-reimport.mjs",

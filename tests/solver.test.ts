@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BUDGET_CAP, chooseBestStartingXI, fallbackRecommendation, hasLegalCaptainLinks } from "@/lib/solver/recommend";
+import { BUDGET_CAP, buildRecommendation, chooseBestStartingXI, fallbackRecommendation, hasLegalCaptainLinks } from "@/lib/solver/recommend";
 import type { ProjectedPlayer } from "@/lib/scoring/types";
 
 function projected(id: number, position: ProjectedPlayer["position"], teamId: number, price: number): ProjectedPlayer {
@@ -51,4 +51,12 @@ test("captain and vice-captain links reject players outside the XI", () => {
   const xi = pool.slice(0, 11);
   assert.equal(hasLegalCaptainLinks(xi, pool[12], xi[1]), false);
   assert.equal(hasLegalCaptainLinks(xi, xi[0], xi[1]), true);
+});
+
+test("squad optimization never changes independently calculated five-plus estimates", () => {
+  const pool = validPool().map((player, index) => ({ ...player, fivePlusProbability: index + 0.5 }));
+  const before = new Map(pool.map((player) => [player.id, player.fivePlusProbability]));
+  const recommendation = buildRecommendation(pool);
+  assert.ok(recommendation);
+  for (const player of pool) assert.equal(player.fivePlusProbability, before.get(player.id));
 });
