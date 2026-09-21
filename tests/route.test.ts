@@ -101,6 +101,9 @@ test("generic route returns compact response schema v2 and captain-inclusive tot
     assert.equal(payload.data.recommendation.squad.length, 15);
     assert.equal(payload.data.recommendation.startingXIIds.length, 11);
     assert.equal(payload.data.recommendation.benchIds.length, 4);
+    assert.equal(payload.data.scoring.fivePlusMetric.featureParity, "production-replay");
+    assert.equal(payload.data.scoring.fivePlusMetric.availabilityTreatment, "reported-separately");
+    assert.equal(payload.data.scoring.fivePlusMetric.doubleGameweekEvidence, "limited-sample");
     assert.equal("startingXI" in payload.data.recommendation, false);
     const byId = new Map<number, { id: number; projectedPoints: number }>(payload.data.recommendation.squad.map((player: { id: number; projectedPoints: number }) => [player.id, player]));
     const projectedPoints = (id: number) => {
@@ -229,6 +232,28 @@ test("Team ID history and picks failures degrade without changing the scoring pa
     assert.equal(payload.data.userTeam.dataStatus, "partial");
     assert.equal(payload.data.userTeam.picksAvailable, false);
     assert.equal(payload.data.recommendation.squad.length, 15);
+  } finally {
+    globalThis.fetch = originalFetch;
+    await clearFplCache();
+  }
+});
+
+test("Team ID upstream outages are not mislabeled as invalid user input", async () => {
+  await clearFplCache();
+  const originalFetch = globalThis.fetch;
+  const base = mockFpl();
+  globalThis.fetch = (async (input, init) => {
+    if (String(input).endsWith("/entry/123/")) return json({}, 503);
+    return base(input, init);
+  }) as typeof fetch;
+  try {
+    const response = await POST(new Request("http://localhost/api/recommend", {
+      method: "POST",
+      body: JSON.stringify({ teamId: 123 }),
+    }));
+    const payload = await response.json();
+    assert.equal(response.status, 502);
+    assert.equal(payload.error.code, "UPSTREAM_ERROR");
   } finally {
     globalThis.fetch = originalFetch;
     await clearFplCache();

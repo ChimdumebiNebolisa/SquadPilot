@@ -135,6 +135,9 @@ export function normalizeBootstrap(
   }
   const rawPlayers = payload.elements;
   const rawTeams = payload.teams;
+  if (rawPlayers.length === 0 || rawTeams.length === 0) {
+    throw new FplSchemaError("Bootstrap payload has no players or teams.");
+  }
 
   const players = rawPlayers
     .map((entry) => {

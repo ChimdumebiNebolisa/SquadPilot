@@ -3,6 +3,7 @@ import { getHistoricalAvailability, loadHistoricalDataset } from "@/lib/historic
 import {
   aggregateFreshness,
   FplHttpError,
+  FplPayloadError,
   fetchBootstrapStatic,
   fetchEntry,
   fetchEntryHistory,
@@ -253,7 +254,8 @@ export async function POST(request: Request) {
     if (teamId != null) {
       try {
         currentTeamResult = await loadCurrentTeam(teamId, resolvePicksEventCandidates(bootstrapRaw));
-      } catch {
+      } catch (error) {
+        if (!(error instanceof FplHttpError) || error.status !== 404) throw error;
         return errorResponse("TEAM_UNAVAILABLE", "The supplied Team ID could not be loaded from FPL.", 422);
       }
     }
@@ -350,6 +352,11 @@ export async function POST(request: Request) {
     }
     if (error instanceof FplSchemaError) {
       return errorResponse("UPSTREAM_SCHEMA_ERROR", "FPL bootstrap data does not match the required schema.", 502);
+    }
+    if (error instanceof FplPayloadError) {
+      return error.source === "fixtures"
+        ? errorResponse("FIXTURE_DATA_UNAVAILABLE", "FPL fixture data is invalid or unavailable.", 502)
+        : errorResponse("UPSTREAM_SCHEMA_ERROR", "FPL bootstrap data does not match the required schema.", 502);
     }
     if (error instanceof FplHttpError) {
       if (error.source === "fixtures") {

@@ -1,4 +1,5 @@
 import { getCache } from "@vercel/functions";
+import { normalizeBootstrap, normalizeFixtures } from "@/lib/fpl/normalize";
 
 const FPL_BASE_URL = "https://fantasy.premierleague.com/api";
 const REQUEST_TIMEOUT_MS = 8_000;
@@ -79,6 +80,12 @@ export class FplHttpError extends Error {
   }
 }
 
+export class FplPayloadError extends Error {
+  constructor(public readonly source: "bootstrap" | "fixtures") {
+    super(`FPL ${source} payload failed schema validation.`);
+  }
+}
+
 async function requestJson(path: string, source: FplSource): Promise<unknown> {
   let lastError = new FplHttpError(502, `FPL request failed for ${path}.`, source);
   for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -108,7 +115,7 @@ function isCacheEnvelope(value: unknown): value is CacheEnvelope<unknown> {
     && "value" in value;
 }
 
-async function publicData<T>(policy: PublicFetchPolicy): Promise<FplFetchResult<T>> {
+async function publicData<T>(policy: PublicFetchPolicy, validate: (value: unknown) => void): Promise<FplFetchResult<T>> {
   const current = await runtimeCache.get(policy.key).catch(() => null);
   const cached = isCacheEnvelope(current) ? current as CacheEnvelope<T> : null;
   if (cached && Date.now() - cached.fetchedAt <= policy.freshMs) {
@@ -121,6 +128,11 @@ async function publicData<T>(policy: PublicFetchPolicy): Promise<FplFetchResult<
   const pending = (async (): Promise<FplFetchResult<T>> => {
     try {
       const value = await requestJson(policy.path, policy.source) as T;
+      try {
+        validate(value);
+      } catch {
+        throw new FplPayloadError(policy.source);
+      }
       const entry: CacheEnvelope<T> = { value, fetchedAt: Date.now() };
       await runtimeCache.set(policy.key, entry, {
         name: policy.source,
@@ -191,11 +203,11 @@ async function teamData<T>(path: string, key: string): Promise<FplFetchResult<T>
 }
 
 export async function fetchBootstrapStatic(): Promise<FplFetchResult<unknown>> {
-  return publicData(publicPolicies.bootstrap);
+  return publicData(publicPolicies.bootstrap, (value) => { normalizeBootstrap(value); });
 }
 
 export async function fetchFixtures(): Promise<FplFetchResult<unknown>> {
-  return publicData(publicPolicies.fixtures);
+  return publicData(publicPolicies.fixtures, (value) => { normalizeFixtures(value); });
 }
 
 export async function fetchEntry(teamId: number): Promise<FplFetchResult<unknown>> {
