@@ -49,3 +49,6 @@ next-env.d.ts
 /data/historical/*.json
 /data/historical/*.json.gz
 !/data/historical/*.json.gz
+!/data/historical/sources.json
+
+.env*.local

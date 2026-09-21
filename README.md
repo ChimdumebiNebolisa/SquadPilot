@@ -1,66 +1,56 @@
 # FPL SquadPilot
 
-SquadPilot is a deterministic, source-backed FPL decision tracker. It recommends a legal 15-player squad, starting XI, captain, vice-captain, and bench order for the next gameweek. It does not use an LLM, paid API, subjective football opinions, predicted lineups, manager-style analysis, or automatic transfers.
+SquadPilot produces a legal, list-based FPL squad, starting XI, ordered bench, captain, and vice-captain for the next gameweek. An optional Team ID adds a comparison with the latest deadline-passed picks; it never makes transfers or stores account credentials.
 
-## Run locally
+## Local development
+
+Use Node.js 24.
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-Open `http://localhost:3000`.
-
-Useful checks:
+The main release checks are:
 
 ```bash
 npm run lint
-npx tsc --noEmit
-npm test
+npm run typecheck
+npm run test:coverage
+npm run verify:historical
+npm run backtest
 npm run build
+npm audit --omit=dev --audit-level=high
 ```
 
-## Data boundary
+## Data and identity
 
-All live requests are server-side and cached in memory with retry, stale-cache fallback, and sync metadata.
+Current player, team, fixture, and optional Team ID data come from the public FPL API. Public bootstrap and fixture responses use fixed Vercel Runtime Cache keys with independent freshness limits. Team ID responses remain in a bounded, short-lived process-local LRU and are never placed in shared cache.
 
-- **FPL public API** is live truth for current players, prices, points, form, minutes, starts, availability, news, chance-of-playing fields, expected goals/assists where supplied, FPL `ep_next`, set-piece order, team strengths, fixtures, home/away status, double gameweeks, and optional Team ID data.
-- **Vaastav’s Fantasy Premier League repository** is historical evidence only. The repository ships with compressed normalized snapshots for 2024-25 and 2025-26 under `data/historical/`; the app does not fetch those CSV files during a user request. Add another pinned season with `npm run sync:historical -- --season YYYY-YY` and commit the resulting `.json.gz` file.
+Historical records come from the [Vaastav Fantasy Premier League repository](https://github.com/vaastav/Fantasy-Premier-League) at the immutable commit in `data/historical/sources.json`. Cross-season joins use stable FPL `code` and `team_code`; season-local element/team IDs are retained only as provenance. Each snapshot records SHA-256 hashes for every source CSV. Runtime aggregates and walk-forward training records are separate schema-v2 artifacts.
 
-Every normalized record carries source, season, gameweek or fixture, as-of time, confidence, and availability status. Historical player joins prefer FPL element IDs; fallback identity matching is explicit and low-confidence. Missing historical data is displayed as “insufficient historical data”.
+Rebuild and verify the checked-in data with:
 
-The repository does not claim support for manager tactical style, manager-specific opponent records, external predicted lineups, or injury information beyond FPL’s own status/news/chance fields. FPL `ep_next` is shown as a baseline comparator; it is not added again as an independent score signal. Start and points estimates are deterministic heuristics, not calibrated probabilities.
+```bash
+npm run sync:historical -- --season 2024-25
+npm run sync:historical -- --season 2025-26
+npm run verify:reimport
+```
 
-## Recommendation model
+## Projection model
 
-The score groups information into availability, expected minutes, recent production, season baseline, historical baseline, fixture context, opponent history, role/set pieces, and value. Correlated fields are capped or kept as a comparator instead of being blindly added together. A double gameweek aggregates every upcoming fixture for the team; the UI shows each fixture’s opponent and home/away status.
+The checked-in model is trained on leakage-free pre-gameweek states from 2024-25 and held out on 2025-26. It uses position-specific ridge models, monotonic point calibration, and monotonic calibration for the chance of scoring at least five points. Its artifact version is derived from a SHA-256 content hash. FPL `ep_next` is comparator-only and is not an input.
 
-Opponent history uses current-season FPL element-summary history when it is fetched for a supplied Team ID, plus imported Vaastav match-level data for older seasons. Small samples are shrunk toward the player baseline and the sample size is returned. No history means no invented estimate.
+`npm run backtest` enforces these holdout gates:
 
-The optimizer preserves FPL constraints:
+- MAE and gameweek rank correlation beat the recent-form baseline;
+- calibrated 5+ probability beats the base-rate Brier score;
+- expected calibration error is at most 0.08.
 
-- 15 players: 2 GK, 5 DEF, 5 MID, 3 FWD
-- £100m budget
-- maximum three players per club
-- legal starting formations
-- captain and vice-captain linked to the starting XI
-- multiple fixtures supported in a gameweek
+Captain hit rate plus positional and double-gameweek slices are reported as diagnostics. A valid fixture feed with no next-gameweek fixture is treated as a confirmed blank, so the player is excluded. Missing or invalid fixture data fails safely instead of creating neutral projections.
 
-If the MILP cannot solve, the fallback first constructs the cheapest legal position- and club-valid squad, upgrades only within budget, and returns an error rather than an over-budget squad.
+## API
 
-## Optional Team ID
+`POST /api/recommend` accepts `{ "teamId": 123 }` or `{}`. Responses use schema v2: one compact `squad` array plus player ID references for the XI, bench, captain, and vice-captain. The projected total includes the captain bonus. Freshness is reported independently for bootstrap, fixtures, historical data, and optional Team ID data.
 
-Enter an FPL Team ID before generating. SquadPilot then attempts to load the current squad, captain, vice-captain, bank, transfers where FPL supplies them, and history. It compares the current squad with the generic recommendation and gives deterministic starting-XI, captain, vice-captain, and weak-player suggestions. It never makes transfers automatically.
-
-## Historical import and backtesting
-
-The reproducible importer is `scripts/sync-vaastav.mjs`. It downloads the allowed Vaastav files, normalizes gameweek records, and writes a compressed versioned snapshot under `data/historical/` for the application to read. `npm run build` verifies that at least one non-empty historical snapshot is present, so a deployment cannot silently ship without the historical layer.
-
-The walk-forward path is documented in [`docs/backtesting.md`](docs/backtesting.md). It only exposes records with gameweek earlier than the evaluated deadline, excludes post-match expected-point fields, and reports projection error, rank correlation, captain hit rate, start-estimate calibration, position and double-gameweek slices, recent-form comparison, plus an explicit availability result for the FPL `ep_next` comparator.
-
-## Attribution
-
-- Live data: [Fantasy Premier League public API](https://fantasy.premierleague.com/api/)
-- Historical data: [Vaastav/Fantasy-Premier-League](https://github.com/vaastav/Fantasy-Premier-League)
-
-See [`docs/backtesting.md`](docs/backtesting.md) for the calibration boundary and reproducibility notes.
+See [docs/backtesting.md](docs/backtesting.md), [SECURITY.md](SECURITY.md), [CONTRIBUTING.md](CONTRIBUTING.md), and [THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES).
