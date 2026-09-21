@@ -3,7 +3,24 @@ import type { FactorContribution, PlayerExplanation } from "@/lib/scoring/types"
 interface ExplanationInput {
   position: "GK" | "DEF" | "MID" | "FWD";
   contributions: FactorContribution[];
+  context: {
+    projectedPoints: number;
+    expectedMinutes: number;
+    form: number;
+    pointsPerGame: number;
+    price: number;
+    selectedByPercent: number;
+    chanceOfPlayingNextRound: number | null;
+    attackingReturns: number;
+    fixtures: Array<{
+      opponentName?: string;
+      isHome: boolean;
+      difficulty: number | null;
+    }>;
+  };
 }
+
+type ExplanationContext = NonNullable<ExplanationInput["context"]>;
 
 type NarrativeMode = "upside-first" | "consistency-first" | "fixture-first" | "value-first";
 
@@ -239,119 +256,109 @@ function summaryByRole(
 }
 
 function whyPickedText(
-  position: ExplanationInput["position"],
-  fixture: "Good" | "Neutral" | "Tough",
-  minutes: "Strong" | "Likely" | "Unclear",
-  value: number,
-  seed: number,
   primaryFactor: FactorContribution["factor"],
   secondaryFactor: FactorContribution["factor"],
+  context: ExplanationContext,
 ): string {
-  const primaryLabel = factorLabel(primaryFactor);
-  const secondaryLabel = factorLabel(secondaryFactor);
+  const evidence = [
+    evidenceForFactor(primaryFactor, context),
+    evidenceForFactor(secondaryFactor, context),
+  ].filter((item, index, items) => items.indexOf(item) === index);
 
-  if (position === "MID" || position === "FWD") {
-    return pickVariant(
-      [
-        `Selected for ${primaryLabel} and ${secondaryLabel}.`,
-        `Selected for ${primaryLabel} and attacking output.`,
-      ],
-      seed,
-    );
-  }
-
-  if (position === "GK") {
-    if (minutes === "Strong" && fixture === "Good") return "Selected for expected minutes and fixture.";
-    if (value >= 0.7) return "Selected for value and clean-sheet potential.";
-    return pickVariant([`Selected for ${primaryLabel} and ${secondaryLabel}.`, "Selected for expected minutes and fixture."], seed);
-  }
-
-  if (position === "DEF") {
-    if (fixture === "Good" && minutes === "Strong") return "Selected for fixture and expected minutes.";
-    if (value >= 0.7) return "Good value and expected minutes.";
-    return `Selected for ${primaryLabel} and ${secondaryLabel}.`;
-  }
-  return `Selected for ${primaryLabel} and ${secondaryLabel}.`;
+  return `Projects for ${context.projectedPoints.toFixed(1)} points, supported by ${joinEvidence(evidence)}.`;
 }
 
-/** Build downside copy from the actual factor value (0–1) so wording matches the data. */
-function downsideFromFactorAndValue(factor: FactorContribution["factor"], value: number): string {
-  const low = value < 0.4;
-  const midLow = value >= 0.4 && value < 0.55;
+function fixtureEvidence(context: ExplanationContext): string {
+  if (context.fixtures.length === 0) return "the upcoming schedule";
+  if (context.fixtures.length > 1) return `${context.fixtures.length} fixtures this gameweek`;
 
+  const fixture = context.fixtures[0]!;
+  const opponent = fixture.opponentName ? ` against ${fixture.opponentName}` : "";
+  const difficulty = fixture.difficulty == null ? "" : `, rated ${fixture.difficulty}/5`;
+  return `a ${fixture.isHome ? "home" : "away"} fixture${opponent}${difficulty}`;
+}
+
+function evidenceForFactor(factor: FactorContribution["factor"], context: ExplanationContext): string {
   switch (factor) {
-    case "expectedMinutes":
-      if (low) return "very uncertain minutes.";
-      if (midLow) return "minutes on the low side.";
-      return "minutes not locked in.";
-    case "fixtureDifficulty":
-      if (low) return "very tough fixture.";
-      if (midLow) return "tougher fixture.";
-      return "fixture slightly against.";
     case "recentForm":
-      if (low) return "recent form has dipped.";
-      if (midLow) return "weaker recent form.";
-      return "form not a strength.";
-    case "value":
-      if (low) return "pricey for output.";
-      if (midLow) return "value not great.";
-      return "value only okay.";
+      return `recent form of ${context.form.toFixed(1)} points per match`;
     case "pointsPerGame":
-      if (low) return "low points per game.";
-      if (midLow) return "weaker points baseline.";
-      return "points baseline modest.";
-    case "opponentStrength":
-      if (low) return "very strong opposition.";
-      if (midLow) return "strong opposition.";
-      return "opponent decent.";
+      return `a ${context.pointsPerGame.toFixed(1)} season points-per-match average`;
+    case "expectedMinutes":
+      return `${Math.round(context.expectedMinutes)} projected minutes`;
+    case "fixtureDifficulty":
     case "homeAway":
-      if (low) return "away fixture.";
-      return "venue not ideal.";
-    case "health":
-      if (low) return "availability a concern.";
-      return "availability worth watching.";
+    case "opponentStrength":
+      return fixtureEvidence(context);
+    case "value":
+      return `value at £${context.price.toFixed(1)}m`;
     case "differential":
-      if (low) return "high ownership.";
-      if (midLow) return "differential limited.";
-      return "ownership not low.";
+      return `${context.selectedByPercent.toFixed(1)}% ownership`;
+    case "health":
+      return context.chanceOfPlayingNextRound == null
+        ? "no reported availability concern"
+        : `${Math.round(context.chanceOfPlayingNextRound)}% reported availability`;
     case "setPiece":
-      if (low) return "no set-piece role.";
-      return "set-piece role limited.";
+      return "set-piece involvement";
     case "historicalVsOpponent":
-      if (low) return "tough historical matchup.";
-      if (midLow) return "historical matchup not favorable.";
-      return "record vs opponent mixed.";
-    case "fplExpectedPoints":
-      if (low) return "low FPL expected points.";
-      if (midLow) return "FPL expected points modest.";
-      return "expected points not a standout.";
+      return "his previous-season record against the opponent";
+    case "historicalBaseline":
+      return "his previous-season performance baseline";
     case "attackingUpside":
-      if (low) return "limited attacking upside.";
-      if (midLow) return "modest attacking threat.";
-      return "attacking upside not high.";
-    default:
-      return "strong opposition.";
+      return context.attackingReturns > 0
+        ? `${context.attackingReturns} league goal contribution${context.attackingReturns === 1 ? "" : "s"}`
+        : "attacking involvement";
+    case "fplExpectedPoints":
+      return "the official FPL points forecast";
   }
+}
+
+function joinEvidence(evidence: string[]): string {
+  if (evidence.length === 0) return "his strongest model signals";
+  if (evidence.length === 1) return evidence[0]!;
+  return `${evidence[0]} and ${evidence[1]}`;
 }
 
 function riskText(
-  contributions: FactorContribution[],
   fixture: "Good" | "Neutral" | "Tough",
-  minutes: "Strong" | "Likely" | "Unclear",
-  health: "Available" | "Doubtful",
   downsideFactor: FactorContribution["factor"],
+  context: ExplanationContext,
 ): string {
-  if (health === "Doubtful") return "availability uncertainty.";
-  if (minutes === "Unclear") return "uncertain minutes.";
-  if (fixture === "Tough") {
-    const v = getContribution(contributions, "fixtureDifficulty");
-    return downsideFromFactorAndValue("fixtureDifficulty", v);
+  if (context.chanceOfPlayingNextRound != null && context.chanceOfPlayingNextRound < 100) {
+    return `FPL reports ${Math.round(context.chanceOfPlayingNextRound)}% availability, so his minutes carry added risk.`;
   }
-  const value = getContribution(contributions, downsideFactor);
-  return downsideFromFactorAndValue(downsideFactor, value);
+  if (context.expectedMinutes < 65) {
+    return `Only ${Math.round(context.expectedMinutes)} minutes are projected, making the return sensitive to selection and substitutions.`;
+  }
+  if (fixture === "Tough") {
+    const toughest = [...context.fixtures]
+      .filter((item) => item.difficulty != null)
+      .sort((left, right) => (right.difficulty ?? 0) - (left.difficulty ?? 0))[0];
+    if (toughest) {
+      const opponent = toughest.opponentName ? ` against ${toughest.opponentName}` : "";
+      return `The ${toughest.isHome ? "home" : "away"} fixture${opponent} is rated ${toughest.difficulty}/5, which lowers this gameweek projection.`;
+    }
+  }
+
+  switch (downsideFactor) {
+    case "recentForm":
+      return `Recent form is ${context.form.toFixed(1)} points per match, below the stronger options in the pool.`;
+    case "pointsPerGame":
+      return `The season average is ${context.pointsPerGame.toFixed(1)} points per match, leaving less margin if the upside does not land.`;
+    case "value":
+      return `At £${context.price.toFixed(1)}m, the points-per-million case is weaker than the alternatives.`;
+    case "differential":
+      return `${context.selectedByPercent.toFixed(1)}% ownership offers little differential value.`;
+    case "attackingUpside":
+      return context.attackingReturns > 0
+        ? `He has ${context.attackingReturns} league goal contribution${context.attackingReturns === 1 ? "" : "s"}, so attacking upside is not the main source of the projection.`
+        : "He has no league goal contributions yet, so the projection relies on other routes to points.";
+    default:
+      return "There is no major availability flag; normal gameweek variance remains the main risk.";
+  }
 }
 
-export function buildPlayerExplanation({ position, contributions }: ExplanationInput, variationOffset = 0): PlayerExplanation {
+export function buildPlayerExplanation({ position, contributions, context }: ExplanationInput, variationOffset = 0): PlayerExplanation {
   const recentForm = getContribution(contributions, "recentForm");
   const expectedMinutes = getContribution(contributions, "expectedMinutes");
   const fixtureDifficulty = getContribution(contributions, "fixtureDifficulty");
@@ -372,8 +379,8 @@ export function buildPlayerExplanation({ position, contributions }: ExplanationI
 
   return {
     summary: summaryByRole(position, value, recentForm, expectedMinutes, fixture, seed, mode, leadPositive),
-    whyPicked: whyPickedText(position, fixture, minutes, value, seed + 3, leadPositive, secondPositive),
-    mainRisk: riskText(contributions, fixture, minutes, healthStatus, leadNegative),
+    whyPicked: whyPickedText(leadPositive, secondPositive, context),
+    mainRisk: riskText(fixture, leadNegative, context),
     confidence,
     tags: [`Fixture: ${fixture}`, `Minutes: ${minutes}`, `Health: ${healthStatus}`, `Mode: ${mode}`],
   };

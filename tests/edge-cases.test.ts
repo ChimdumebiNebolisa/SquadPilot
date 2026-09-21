@@ -277,8 +277,71 @@ test("explanations derive downside text from the weakest player-specific factor"
     weight: 0.1,
     contribution: factor === "value" ? 0.02 : 0.09,
   }));
-  const explanation = buildPlayerExplanation({ position: "DEF", contributions });
-  assert.equal(explanation.mainRisk, "pricey for output.");
+  const explanation = buildPlayerExplanation({
+    position: "DEF",
+    contributions,
+    context: {
+      projectedPoints: 4.2,
+      expectedMinutes: 86,
+      form: 4.5,
+      pointsPerGame: 4.1,
+      price: 6.5,
+      selectedByPercent: 12,
+      chanceOfPlayingNextRound: 100,
+      attackingReturns: 3,
+      fixtures: [{ opponentName: "BRE", isHome: true, difficulty: 3 }],
+    },
+  });
+  assert.equal(explanation.mainRisk, "At £6.5m, the points-per-million case is weaker than the alternatives.");
+});
+
+test("player explanations use concrete projection and fixture evidence when available", () => {
+  const factors = Object.keys({
+    recentForm: 1,
+    pointsPerGame: 1,
+    expectedMinutes: 1,
+    fixtureDifficulty: 1,
+    homeAway: 1,
+    opponentStrength: 1,
+    value: 1,
+    differential: 1,
+    health: 1,
+    setPiece: 1,
+    historicalVsOpponent: 1,
+    historicalBaseline: 1,
+    fplExpectedPoints: 1,
+    attackingUpside: 1,
+  } satisfies Record<keyof PlayerFeatureVector, number>) as Array<keyof PlayerFeatureVector>;
+  const contributions: FactorContribution[] = factors.map((factor) => ({
+    factor,
+    value: factor === "fixtureDifficulty" ? 0.2 : 0.8,
+    weight: 0.1,
+    contribution: factor === "recentForm" ? 0.12 : factor === "pointsPerGame" ? 0.11 : 0.08,
+  }));
+  const explanation = buildPlayerExplanation({
+    position: "MID",
+    contributions,
+    context: {
+      projectedPoints: 6.3,
+      expectedMinutes: 84,
+      form: 7.2,
+      pointsPerGame: 5.8,
+      price: 10.5,
+      selectedByPercent: 18.4,
+      chanceOfPlayingNextRound: 100,
+      attackingReturns: 8,
+      fixtures: [{ opponentName: "MCI", isHome: false, difficulty: 5 }],
+    },
+  });
+
+  assert.equal(
+    explanation.whyPicked,
+    "Projects for 6.3 points, supported by recent form of 7.2 points per match and a 5.8 season points-per-match average.",
+  );
+  assert.equal(
+    explanation.mainRisk,
+    "The away fixture against MCI is rated 5/5, which lowers this gameweek projection.",
+  );
 });
 
 test("start outlook uses broad labels instead of pseudo-precise percentages", () => {

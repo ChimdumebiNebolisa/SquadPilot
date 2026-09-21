@@ -59,6 +59,7 @@ export function scorePlayers(
 ): ProjectedPlayer[] {
   const nextGameweek = options.nextGameweek ?? 0;
   const teamIds = [...new Set(players.map((player) => player.teamId))];
+  const teamNameById = new Map(teams.map((team) => [team.id, team.shortName]));
   const fixtureSummaryByTeam = new Map(teamIds.map((teamId) => [
     teamId,
     nextGameweek > 0
@@ -141,7 +142,25 @@ export function scorePlayers(
         historicalDataStatus,
         dataSources: [...dataSources],
         contributions,
-        explanation: buildPlayerExplanation({ position: player.position, contributions }),
+        explanation: buildPlayerExplanation({
+          position: player.position,
+          contributions,
+          context: {
+            projectedPoints,
+            expectedMinutes: featureResult.expectedMinutes,
+            form: player.form,
+            pointsPerGame: player.pointsPerGame,
+            price: player.price,
+            selectedByPercent: player.selectedByPercent,
+            chanceOfPlayingNextRound: player.chanceOfPlayingNextRound,
+            attackingReturns: player.goals + player.assists,
+            fixtures: featureResult.upcomingFixtures.map((fixture) => ({
+              opponentName: teamNameById.get(fixture.opponentTeamId),
+              isHome: fixture.isHome,
+              difficulty: fixture.difficulty,
+            })),
+          },
+        }),
       };
     })
     .filter((player): player is ProjectedPlayer => player !== null)

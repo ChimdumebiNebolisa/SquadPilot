@@ -81,7 +81,7 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
         <p className="mt-3 text-xl font-bold tabular-nums text-brand">{player.projectedPoints.toFixed(1)} pts</p>
 
         <dl className="mt-4 space-y-2 text-xs">
-          <div className="flex justify-between gap-3"><dt className="text-muted">Starting outlook (heuristic)</dt><dd>{startOutlookLabel(player.startEstimatePercent)}</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-muted">Starting outlook</dt><dd>{startOutlookLabel(player.startEstimatePercent)}</dd></div>
           <div className="flex justify-between gap-3"><dt className="text-muted">Expected minutes</dt><dd>{expectedMinutesDisplay(player)}</dd></div>
           <div className="flex justify-between gap-3"><dt className="text-muted">Fixture difficulty</dt><dd>{fixtureDifficulty1To5(player)} / 5</dd></div>
           <div className="flex justify-between gap-3"><dt className="text-muted">Chance of 5+ GW points (model estimate)</dt><dd>{Math.round(player.fivePlusProbability)}%</dd></div>
@@ -91,13 +91,11 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
           {player.fixtureCount > 1 && <p>Double-gameweek probability has limited held-out evidence.</p>}
           <p>The 5+ estimate combines current performance with previous-season player and opponent history when available.</p>
           <p><span className="font-medium text-muted-foreground">Fixtures:</span> {player.upcomingFixtures.map((fixture) => `${fixture.isHome ? "H" : "A"} · ${teamShortNames[fixture.opponentTeamId] ?? `T${fixture.opponentTeamId}`}`).join(" / ")}</p>
-          <p><span className="font-medium text-muted-foreground">Opponent history:</span> {player.historicalSampleSize > 0 ? `${player.historicalSampleSize} match${player.historicalSampleSize === 1 ? "" : "es"}` : "insufficient data"}</p>
-          <p><span className="font-medium text-muted-foreground">Sources:</span> {player.dataSources.join(" + ")}</p>
         </div>
 
         <div className="mt-4 space-y-1.5 text-xs leading-relaxed text-muted">
-          <p><span className="font-medium text-muted-foreground">Why:</span> {player.explanation.whyPicked}</p>
-          <p><span className="font-medium text-muted-foreground">Downside:</span> {player.explanation.mainRisk}</p>
+          <p><span className="font-medium text-muted-foreground">Why this pick:</span> {player.explanation.whyPicked}</p>
+          <p><span className="font-medium text-muted-foreground">Main concern:</span> {player.explanation.mainRisk}</p>
         </div>
       </article>
     </dialog>

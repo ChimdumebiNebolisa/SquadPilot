@@ -47,6 +47,20 @@ function enforceDistinctSquadInsights(squad: ProjectedPlayer[]): void {
         {
           position: player.position,
           contributions: player.contributions,
+          context: {
+            projectedPoints: player.projectedPoints,
+            expectedMinutes: player.expectedMinutes,
+            form: player.form,
+            pointsPerGame: player.pointsPerGame,
+            price: player.price,
+            selectedByPercent: player.selectedByPercent,
+            chanceOfPlayingNextRound: player.chanceOfPlayingNextRound,
+            attackingReturns: player.goals + player.assists,
+            fixtures: player.upcomingFixtures.map((fixture) => ({
+              isHome: fixture.isHome,
+              difficulty: fixture.difficulty,
+            })),
+          },
         },
         variationOffset,
       );
