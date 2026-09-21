@@ -4,7 +4,7 @@ SquadPilot separates compact runtime aggregates under `data/historical/` from ma
 
 ## Leakage boundary
 
-For an evaluated gameweek, feature state is built only from that player's records in earlier gameweeks. The current gameweek contributes fixture count, venue, and difficulty but no post-match player fields. FPL expected points are unavailable in the pinned historical source and remain excluded from model inputs in production.
+For an evaluated gameweek, feature state is built only from that player's records in earlier gameweeks. The current gameweek contributes fixture count, venue, and difficulty but no post-match player fields. Vaastav's raw match file includes an `xP` field, but SquadPilot deliberately excludes it from the normalized training snapshot and all model inputs; live FPL `ep_next` remains comparator-only.
 
 Projected points use seven normalized inputs: recent form, season points per game, expected minutes, fixture difficulty, home share, value, and stable-code opponent history. A regularized point model is trained separately for GK, DEF, MID, and FWD.
 
@@ -29,7 +29,7 @@ The held-out report must satisfy all of the following:
 - model MAE is lower than the recent-form baseline;
 - mean gameweek Spearman rank correlation is higher than the baseline;
 - Brier score for 5+ points is lower than the validation base-rate Brier score;
-- expected calibration error is no greater than 0.08.
+- expected calibration error is no greater than 0.08;
 - every position beats its own base-rate Brier score and has expected calibration error no greater than 0.08;
 - the high-minutes candidate cohort beats its own base-rate Brier score and has expected calibration error no greater than 0.08;
 - the overall, every-position, and high-minutes paired Brier improvements have gameweek-clustered 95% intervals below zero;

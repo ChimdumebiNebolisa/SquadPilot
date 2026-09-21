@@ -15,7 +15,7 @@ console.log(JSON.stringify({
   validationSeason: artifact.validationSeason,
   validation,
   fplExpectedPointsComparator: {
-    status: "not-available-in-source-snapshot",
+    status: "excluded-from-normalized-training-snapshot",
     usage: "comparator-only; never a model input",
   },
 }, null, 2));

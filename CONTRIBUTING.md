@@ -9,7 +9,6 @@ Before submitting a pull request, run:
 ```bash
 npm run lint
 npm run typecheck
-npm test
 npm run test:coverage
 npm run verify:historical
 npm run backtest
