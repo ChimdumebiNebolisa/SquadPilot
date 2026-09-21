@@ -22,3 +22,4 @@ export function predictCalibratedProjection(
 export const SCORING_MODEL_VERSION = modelArtifact.version;
 export const SCORING_MODEL_TRAINING_SEASON = modelArtifact.trainingSeason;
 export const SCORING_MODEL_VALIDATION_SEASON = modelArtifact.validationSeason;
+export const SCORING_MODEL_HISTORY_SEASON = modelArtifact.runtimeHistorySeason;

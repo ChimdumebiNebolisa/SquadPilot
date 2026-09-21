@@ -338,6 +338,7 @@ export async function POST(request: Request) {
             featureParity: "production-replay",
             availabilityTreatment: "reported-separately",
             doubleGameweekEvidence: "limited-sample",
+            historyTreatment: "previous-season-player-and-opponent",
           },
         },
         userTeam,

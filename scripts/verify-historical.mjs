@@ -11,8 +11,8 @@ const manifest = JSON.parse(await readFile(join(root, "data", "historical", "sou
 if (manifest.schemaVersion !== 1 || !/^[a-f0-9]{40}$/.test(manifest.commitSha ?? "")) {
   throw new Error("Historical source manifest is invalid or not pinned to a full commit SHA.");
 }
-if (!Number.isFinite(Date.parse(manifest.commitTimestamp)) || !Array.isArray(manifest.seasons) || manifest.seasons.length < 2) {
-  throw new Error("Historical source manifest must include its commit timestamp and both seasons.");
+if (!Number.isFinite(Date.parse(manifest.commitTimestamp)) || !Array.isArray(manifest.seasons) || manifest.seasons.length < 3) {
+  throw new Error("Historical source manifest must include its commit timestamp and all three required seasons.");
 }
 
 let records = 0;
@@ -53,9 +53,16 @@ for (const season of manifest.seasons) {
 const model = JSON.parse(await readFile(join(root, "data", "model", "scoring-model.json"), "utf8"));
 const { version, contentHash, ...content } = model;
 const expectedHash = createHash("sha256").update(JSON.stringify(content)).digest("hex");
-if (model.schemaVersion !== 3
+if (model.schemaVersion !== 4
   || !Array.isArray(model.fivePlusFeatures)
-  || model.fivePlusFeatures.length === 0
+  || !["previousSeasonPointsPer90", "previousSeasonPointsPerFixture", "previousSeasonMinutesShare",
+    "previousSeasonSampleStrength", "previousSeasonAvailable", "historyAdjustedPointsPerFixture",
+    "opponentHistoryPointsPer90", "opponentHistorySampleStrength", "opponentHistoryCoverage"]
+    .every((feature) => model.fivePlusFeatures.includes(feature))
+  || model.historyTreatment !== "previous-season-player-and-opponent"
+  || model.historyLookbackSeasons !== 1
+  || model.trainingHistorySeason !== "2023-24"
+  || model.runtimeHistorySeason !== model.validationSeason
   || !Array.isArray(model.doubleGameweekFivePlusCalibration)
   || model.doubleGameweekFivePlusCalibration.length === 0
   || model.validation?.releaseGates?.doubleGameweekBrierBeatsBaseRate !== true
@@ -68,6 +75,13 @@ if (model.schemaVersion !== 3
   || model.validation?.releaseGates?.clusteredBrierImprovementLikely !== true
   || model.validation?.releaseGates?.everyPositionClusteredBrierImprovementLikely !== true
   || model.validation?.releaseGates?.activeCandidateClusteredBrierImprovementLikely !== true
+  || model.validation?.releaseGates?.overallBrierImproves !== true
+  || model.validation?.releaseGates?.activeCandidateBrierImproves !== true
+  || model.validation?.releaseGates?.everyPositionBrierWithinTolerance !== true
+  || model.validation?.releaseGates?.overallDiscriminationDoesNotRegress !== true
+  || model.validation?.releaseGates?.activeCandidateDiscriminationDoesNotRegress !== true
+  || model.validation?.releaseGates?.pairedGameweekBrierDifferenceIsNegative !== true
+  || model.incumbentComparison?.passed !== true
   || contentHash !== expectedHash
   || version !== expectedHash.slice(0, 12)
   || model.validation?.releasePassed !== true) {

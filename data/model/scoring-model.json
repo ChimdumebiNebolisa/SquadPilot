@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "features": [
     "recentForm",
     "pointsPerGame",
@@ -15,10 +15,24 @@
     "fixtureDifficulty",
     "homeAway",
     "value",
-    "fixtureCount"
+    "fixtureCount",
+    "previousSeasonPointsPer90",
+    "previousSeasonPointsPerFixture",
+    "previousSeasonMinutesShare",
+    "previousSeasonSampleStrength",
+    "previousSeasonAvailable",
+    "historyAdjustedPointsPerFixture",
+    "opponentHistoryPointsPer90",
+    "opponentHistorySampleStrength",
+    "opponentHistoryCoverage"
   ],
+  "historyTreatment": "previous-season-player-and-opponent",
+  "historyLookbackSeasons": 1,
+  "historyPenaltyMultiplier": 4096,
+  "trainingHistorySeason": "2023-24",
   "trainingSeason": "2024-25",
   "validationSeason": "2025-26",
+  "runtimeHistorySeason": "2025-26",
   "sourceCommit": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88",
   "models": {
     "GK": {
@@ -104,102 +118,131 @@
       ],
       "recentFormBlend": 0.9,
       "fivePlus": {
-        "intercept": -5.2386,
+        "intercept": -5.34558,
         "coefficients": {
-          "seasonPointsPerFixture": 0.396178,
-          "minutesPerTeamFixture": 2.588533,
-          "fixtureDifficulty": 1.378411,
-          "homeAway": -0.155735,
-          "value": 0.849571,
-          "fixtureCount": 0.72484
+          "seasonPointsPerFixture": 0.35422,
+          "minutesPerTeamFixture": 2.454928,
+          "fixtureDifficulty": 1.411344,
+          "homeAway": -0.157713,
+          "value": 0.799092,
+          "fixtureCount": 0.711981,
+          "previousSeasonPointsPer90": 0.030157,
+          "previousSeasonPointsPerFixture": 0.021208,
+          "previousSeasonMinutesShare": 0.061826,
+          "previousSeasonSampleStrength": 0.084919,
+          "previousSeasonAvailable": 0.095354,
+          "historyAdjustedPointsPerFixture": 0.010445,
+          "opponentHistoryPointsPer90": 0.020118,
+          "opponentHistorySampleStrength": 0.012321,
+          "opponentHistoryCoverage": 0.039588
         },
         "calibration": [
           {
-            "threshold": 0.006484,
+            "threshold": 0.006038,
             "value": 0
           },
           {
-            "threshold": 0.007568,
+            "threshold": 0.007048,
             "value": 0
           },
           {
-            "threshold": 0.007568,
+            "threshold": 0.008099,
             "value": 0
           },
           {
-            "threshold": 0.009127,
+            "threshold": 0.008207,
             "value": 0
           },
           {
-            "threshold": 0.009127,
+            "threshold": 0.008585,
             "value": 0
           },
           {
-            "threshold": 0.010649,
+            "threshold": 0.009596,
             "value": 0
           },
           {
-            "threshold": 0.010649,
+            "threshold": 0.00976,
             "value": 0
           },
           {
-            "threshold": 0.010649,
+            "threshold": 0.01002,
             "value": 0
           },
           {
-            "threshold": 0.010649,
+            "threshold": 0.010771,
             "value": 0
           },
           {
-            "threshold": 0.014965,
-            "value": 0.002899
+            "threshold": 0.01164,
+            "value": 0
           },
           {
-            "threshold": 0.020993,
+            "threshold": 0.01164,
+            "value": 0
+          },
+          {
+            "threshold": 0.01164,
+            "value": 0
+          },
+          {
+            "threshold": 0.012153,
+            "value": 0
+          },
+          {
+            "threshold": 0.012153,
+            "value": 0
+          },
+          {
+            "threshold": 0.012153,
+            "value": 0
+          },
+          {
+            "threshold": 0.012668,
+            "value": 0
+          },
+          {
+            "threshold": 0.014578,
+            "value": 0.006211
+          },
+          {
+            "threshold": 0.017207,
+            "value": 0.008696
+          },
+          {
+            "threshold": 0.023295,
+            "value": 0.012422
+          },
+          {
+            "threshold": 0.028187,
             "value": 0.014493
           },
           {
-            "threshold": 0.025246,
-            "value": 0.021739
+            "threshold": 0.061036,
+            "value": 0.069565
           },
           {
-            "threshold": 0.025246,
-            "value": 0.021739
+            "threshold": 0.090923,
+            "value": 0.076087
           },
           {
-            "threshold": 0.029585,
-            "value": 0.021739
+            "threshold": 0.17864,
+            "value": 0.165217
           },
           {
-            "threshold": 0.072374,
-            "value": 0.06087
+            "threshold": 0.213257,
+            "value": 0.195652
           },
           {
-            "threshold": 0.087986,
-            "value": 0.152174
+            "threshold": 0.253,
+            "value": 0.228261
           },
           {
-            "threshold": 0.17576,
-            "value": 0.16087
+            "threshold": 0.320871,
+            "value": 0.268116
           },
           {
-            "threshold": 0.213852,
-            "value": 0.206522
-          },
-          {
-            "threshold": 0.251422,
-            "value": 0.217391
-          },
-          {
-            "threshold": 0.287985,
-            "value": 0.26087
-          },
-          {
-            "threshold": 0.319695,
-            "value": 0.26087
-          },
-          {
-            "threshold": 0.507726,
+            "threshold": 0.498866,
             "value": 0.382716
           }
         ]
@@ -317,91 +360,128 @@
       ],
       "recentFormBlend": 0.9,
       "fivePlus": {
-        "intercept": -5.328917,
+        "intercept": -5.557601,
         "coefficients": {
-          "seasonPointsPerFixture": 1.122652,
-          "minutesPerTeamFixture": 2.162803,
-          "fixtureDifficulty": 1.448562,
-          "homeAway": -0.11721,
-          "value": 0.913005,
-          "fixtureCount": 1.730592
+          "seasonPointsPerFixture": 0.841051,
+          "minutesPerTeamFixture": 2.092609,
+          "fixtureDifficulty": 1.507458,
+          "homeAway": -0.121024,
+          "value": 0.860995,
+          "fixtureCount": 1.669869,
+          "previousSeasonPointsPer90": 0.047717,
+          "previousSeasonPointsPerFixture": 0.044203,
+          "previousSeasonMinutesShare": 0.083856,
+          "previousSeasonSampleStrength": 0.158175,
+          "previousSeasonAvailable": 0.156666,
+          "historyAdjustedPointsPerFixture": 0.033307,
+          "opponentHistoryPointsPer90": 0.03987,
+          "opponentHistorySampleStrength": 0.020894,
+          "opponentHistoryCoverage": 0.06323
         },
         "calibration": [
           {
-            "threshold": 0.010335,
+            "threshold": 0.008813,
             "value": 0
           },
           {
-            "threshold": 0.01669,
-            "value": 0.00463
+            "threshold": 0.019865,
+            "value": 0.005342
           },
           {
-            "threshold": 0.023218,
-            "value": 0.008207
+            "threshold": 0.020883,
+            "value": 0.013889
           },
           {
-            "threshold": 0.033016,
-            "value": 0.024306
+            "threshold": 0.026432,
+            "value": 0.015278
           },
           {
-            "threshold": 0.041796,
-            "value": 0.036458
+            "threshold": 0.028899,
+            "value": 0.025463
           },
           {
-            "threshold": 0.047574,
-            "value": 0.046296
+            "threshold": 0.030143,
+            "value": 0.034722
           },
           {
-            "threshold": 0.050968,
-            "value": 0.0625
+            "threshold": 0.03744,
+            "value": 0.034722
           },
           {
-            "threshold": 0.059276,
-            "value": 0.072917
+            "threshold": 0.038597,
+            "value": 0.034722
           },
           {
-            "threshold": 0.076426,
-            "value": 0.090278
+            "threshold": 0.04677,
+            "value": 0.041667
           },
           {
-            "threshold": 0.092366,
-            "value": 0.100694
+            "threshold": 0.049388,
+            "value": 0.048611
           },
           {
-            "threshold": 0.112802,
-            "value": 0.135417
+            "threshold": 0.056196,
+            "value": 0.055556
           },
           {
-            "threshold": 0.169228,
-            "value": 0.154167
+            "threshold": 0.065525,
+            "value": 0.069444
           },
           {
-            "threshold": 0.182974,
-            "value": 0.159722
+            "threshold": 0.071553,
+            "value": 0.097222
           },
           {
-            "threshold": 0.195855,
-            "value": 0.1875
+            "threshold": 0.086085,
+            "value": 0.107639
           },
           {
-            "threshold": 0.209878,
+            "threshold": 0.121272,
+            "value": 0.116319
+          },
+          {
+            "threshold": 0.154504,
+            "value": 0.155093
+          },
+          {
+            "threshold": 0.181301,
+            "value": 0.180556
+          },
+          {
+            "threshold": 0.196457,
+            "value": 0.180556
+          },
+          {
+            "threshold": 0.211101,
+            "value": 0.180556
+          },
+          {
+            "threshold": 0.225079,
             "value": 0.222222
           },
           {
-            "threshold": 0.242481,
-            "value": 0.232639
+            "threshold": 0.244211,
+            "value": 0.256944
           },
           {
-            "threshold": 0.29861,
-            "value": 0.268519
+            "threshold": 0.263501,
+            "value": 0.256944
           },
           {
-            "threshold": 0.357504,
-            "value": 0.322917
+            "threshold": 0.28596,
+            "value": 0.263889
           },
           {
-            "threshold": 0.676313,
-            "value": 0.379433
+            "threshold": 0.32839,
+            "value": 0.326389
+          },
+          {
+            "threshold": 0.362776,
+            "value": 0.347222
+          },
+          {
+            "threshold": 0.658126,
+            "value": 0.365248
           }
         ]
       },
@@ -518,107 +598,132 @@
       ],
       "recentFormBlend": 0.9,
       "fivePlus": {
-        "intercept": -5.865288,
+        "intercept": -5.913557,
         "coefficients": {
-          "seasonPointsPerFixture": 2.272156,
-          "minutesPerTeamFixture": 1.881348,
-          "fixtureDifficulty": 0.990829,
-          "homeAway": 0.000521,
-          "value": 1.092872,
-          "fixtureCount": 2.529247
+          "seasonPointsPerFixture": 1.960746,
+          "minutesPerTeamFixture": 1.808771,
+          "fixtureDifficulty": 0.939754,
+          "homeAway": 0.003166,
+          "value": 1.154742,
+          "fixtureCount": 2.496562,
+          "previousSeasonPointsPer90": 0.144888,
+          "previousSeasonPointsPerFixture": 0.107786,
+          "previousSeasonMinutesShare": 0.084656,
+          "previousSeasonSampleStrength": 0.064371,
+          "previousSeasonAvailable": 0.063803,
+          "historyAdjustedPointsPerFixture": 0.070503,
+          "opponentHistoryPointsPer90": 0.058849,
+          "opponentHistorySampleStrength": -0.024152,
+          "opponentHistoryCoverage": -0.071526
         },
         "calibration": [
           {
-            "threshold": 0.00995,
+            "threshold": 0.009573,
             "value": 0
           },
           {
-            "threshold": 0.010934,
+            "threshold": 0.010923,
             "value": 0
           },
           {
-            "threshold": 0.012705,
+            "threshold": 0.01177,
             "value": 0
           },
           {
-            "threshold": 0.012705,
-            "value": 0
+            "threshold": 0.013832,
+            "value": 0.001295
           },
           {
-            "threshold": 0.013212,
+            "threshold": 0.015007,
             "value": 0.002591
           },
           {
-            "threshold": 0.016416,
-            "value": 0.003454
+            "threshold": 0.01561,
+            "value": 0.005181
           },
           {
-            "threshold": 0.022034,
-            "value": 0.011658
+            "threshold": 0.023958,
+            "value": 0.010363
           },
           {
-            "threshold": 0.026357,
-            "value": 0.016839
+            "threshold": 0.029626,
+            "value": 0.024611
           },
           {
-            "threshold": 0.028911,
-            "value": 0.018135
+            "threshold": 0.030872,
+            "value": 0.025907
           },
           {
-            "threshold": 0.032969,
-            "value": 0.03886
+            "threshold": 0.032967,
+            "value": 0.036269
           },
           {
-            "threshold": 0.037956,
-            "value": 0.049223
+            "threshold": 0.035635,
+            "value": 0.041451
           },
           {
-            "threshold": 0.05552,
-            "value": 0.051813
+            "threshold": 0.04686,
+            "value": 0.054404
           },
           {
-            "threshold": 0.065804,
-            "value": 0.072539
+            "threshold": 0.054602,
+            "value": 0.056995
           },
           {
-            "threshold": 0.072085,
+            "threshold": 0.06513,
+            "value": 0.067358
+          },
+          {
+            "threshold": 0.077882,
             "value": 0.082902
           },
           {
-            "threshold": 0.07832,
-            "value": 0.098446
+            "threshold": 0.108472,
+            "value": 0.117876
           },
           {
-            "threshold": 0.084898,
-            "value": 0.124352
+            "threshold": 0.11828,
+            "value": 0.129534
           },
           {
-            "threshold": 0.129694,
-            "value": 0.126425
+            "threshold": 0.128097,
+            "value": 0.139896
           },
           {
-            "threshold": 0.139359,
-            "value": 0.150259
+            "threshold": 0.140297,
+            "value": 0.139896
           },
           {
-            "threshold": 0.206675,
-            "value": 0.195855
+            "threshold": 0.162583,
+            "value": 0.194301
           },
           {
-            "threshold": 0.250701,
-            "value": 0.204663
+            "threshold": 0.193206,
+            "value": 0.202073
           },
           {
-            "threshold": 0.315812,
-            "value": 0.295337
+            "threshold": 0.208492,
+            "value": 0.207254
           },
           {
-            "threshold": 0.407959,
+            "threshold": 0.228086,
+            "value": 0.207254
+          },
+          {
+            "threshold": 0.252791,
+            "value": 0.212435
+          },
+          {
+            "threshold": 0.31682,
+            "value": 0.292746
+          },
+          {
+            "threshold": 0.411918,
             "value": 0.305699
           },
           {
-            "threshold": 0.800489,
-            "value": 0.408602
+            "threshold": 0.773627,
+            "value": 0.413978
           }
         ]
       },
@@ -715,122 +820,139 @@
       ],
       "recentFormBlend": 0.9,
       "fivePlus": {
-        "intercept": -4.348001,
+        "intercept": -4.41714,
         "coefficients": {
-          "seasonPointsPerFixture": 1.013061,
-          "minutesPerTeamFixture": 2.605373,
-          "fixtureDifficulty": 0.614668,
-          "homeAway": 0.23345,
-          "value": 0.944631,
-          "fixtureCount": 0.481699
+          "seasonPointsPerFixture": 0.838319,
+          "minutesPerTeamFixture": 2.593088,
+          "fixtureDifficulty": 0.608157,
+          "homeAway": 0.232897,
+          "value": 1.008614,
+          "fixtureCount": 0.463532,
+          "previousSeasonPointsPer90": 0.034109,
+          "previousSeasonPointsPerFixture": 0.047356,
+          "previousSeasonMinutesShare": 0.065904,
+          "previousSeasonSampleStrength": 0.049829,
+          "previousSeasonAvailable": 0.040425,
+          "historyAdjustedPointsPerFixture": 0.024337,
+          "opponentHistoryPointsPer90": 0.014869,
+          "opponentHistorySampleStrength": -0.002469,
+          "opponentHistoryCoverage": -0.011355
         },
         "calibration": [
           {
-            "threshold": 0.016347,
+            "threshold": 0.017022,
             "value": 0
           },
           {
-            "threshold": 0.018826,
+            "threshold": 0.017407,
             "value": 0
           },
           {
-            "threshold": 0.018826,
+            "threshold": 0.018845,
             "value": 0
           },
           {
-            "threshold": 0.019106,
+            "threshold": 0.019677,
             "value": 0
           },
           {
-            "threshold": 0.020358,
+            "threshold": 0.019968,
             "value": 0
           },
           {
-            "threshold": 0.021885,
+            "threshold": 0.020207,
             "value": 0
           },
           {
-            "threshold": 0.021885,
+            "threshold": 0.020356,
             "value": 0
           },
           {
-            "threshold": 0.021885,
+            "threshold": 0.021299,
             "value": 0
           },
           {
-            "threshold": 0.021885,
+            "threshold": 0.021846,
             "value": 0
           },
           {
-            "threshold": 0.021885,
+            "threshold": 0.022253,
             "value": 0
           },
           {
-            "threshold": 0.024429,
-            "value": 0.005208
+            "threshold": 0.025372,
+            "value": 0.002976
           },
           {
-            "threshold": 0.027482,
-            "value": 0.005952
+            "threshold": 0.02907,
+            "value": 0.010417
           },
           {
-            "threshold": 0.031901,
-            "value": 0.006944
+            "threshold": 0.030762,
+            "value": 0.013889
           },
           {
-            "threshold": 0.034092,
-            "value": 0.03125
+            "threshold": 0.036704,
+            "value": 0.025
           },
           {
-            "threshold": 0.039315,
-            "value": 0.041667
+            "threshold": 0.042359,
+            "value": 0.048611
           },
           {
-            "threshold": 0.04268,
+            "threshold": 0.046192,
             "value": 0.0625
           },
           {
-            "threshold": 0.046321,
-            "value": 0.0625
+            "threshold": 0.050755,
+            "value": 0.083333
           },
           {
-            "threshold": 0.063158,
-            "value": 0.076389
+            "threshold": 0.057512,
+            "value": 0.083333
           },
           {
-            "threshold": 0.136664,
-            "value": 0.152778
+            "threshold": 0.06452,
+            "value": 0.125
           },
           {
-            "threshold": 0.160846,
+            "threshold": 0.139977,
+            "value": 0.142361
+          },
+          {
+            "threshold": 0.211636,
             "value": 0.229167
           },
           {
-            "threshold": 0.209848,
+            "threshold": 0.233818,
             "value": 0.229167
           },
           {
-            "threshold": 0.230781,
-            "value": 0.229167
-          },
-          {
-            "threshold": 0.255757,
+            "threshold": 0.256713,
             "value": 0.291667
           },
           {
-            "threshold": 0.302803,
+            "threshold": 0.31526,
+            "value": 0.291667
+          },
+          {
+            "threshold": 0.333077,
             "value": 0.3125
           },
           {
-            "threshold": 0.382585,
-            "value": 0.322917
+            "threshold": 0.403703,
+            "value": 0.368056
           },
           {
-            "threshold": 0.540785,
-            "value": 0.411458
+            "threshold": 0.470422,
+            "value": 0.416667
           },
           {
-            "threshold": 0.759577,
+            "threshold": 0.540628,
+            "value": 0.4375
+          },
+          {
+            "threshold": 0.74959,
             "value": 0.516129
           }
         ]
@@ -840,52 +962,60 @@
   },
   "doubleGameweekFivePlusCalibration": [
     {
-      "threshold": 0.023428,
+      "threshold": 0.0217,
       "value": 0
     },
     {
-      "threshold": 0.040221,
+      "threshold": 0.034204,
       "value": 0
     },
     {
-      "threshold": 0.043602,
+      "threshold": 0.041545,
       "value": 0
     },
     {
-      "threshold": 0.049081,
+      "threshold": 0.046412,
       "value": 0
     },
     {
-      "threshold": 0.061956,
-      "value": 0.019231
+      "threshold": 0.052723,
+      "value": 0.038462
     },
     {
-      "threshold": 0.074496,
+      "threshold": 0.064659,
+      "value": 0.038462
+    },
+    {
+      "threshold": 0.074038,
       "value": 0.076923
     },
     {
-      "threshold": 0.09499,
-      "value": 0.230769
+      "threshold": 0.105051,
+      "value": 0.153846
     },
     {
-      "threshold": 0.149118,
-      "value": 0.230769
+      "threshold": 0.157258,
+      "value": 0.192308
     },
     {
-      "threshold": 0.218444,
-      "value": 0.307692
-    },
-    {
-      "threshold": 0.294269,
+      "threshold": 0.231519,
       "value": 0.384615
     },
     {
-      "threshold": 0.471287,
+      "threshold": 0.292086,
+      "value": 0.384615
+    },
+    {
+      "threshold": 0.391441,
       "value": 0.538462
     },
     {
-      "threshold": 0.875286,
-      "value": 0.791667
+      "threshold": 0.470704,
+      "value": 0.576923
+    },
+    {
+      "threshold": 0.868346,
+      "value": 0.75
     }
   ],
   "validation": {
@@ -894,24 +1024,26 @@
     "recentFormBaselineMeanAbsoluteError": 1.0512358025991289,
     "rankCorrelation": 0.7241414693970013,
     "recentFormBaselineRankCorrelation": 0.723059145376797,
-    "brierScore": 0.06762184665052762,
+    "brierScore": 0.06760540337579385,
     "baseRateBrierScore": 0.07858244000000912,
-    "expectedCalibrationError": 0.011043618626523841,
+    "expectedCalibrationError": 0.011113871635611238,
+    "rocAuc": 0.8445979128780549,
     "captainHitRate": 0.4594594594594595,
     "byPosition": {
       "GK": {
         "samples": 3286,
-        "brierScore": 0.04618558703590983,
+        "brierScore": 0.046426083384053574,
         "baseRateBrierScore": 0.0563571491811843,
-        "expectedCalibrationError": 0.010804321363359714,
-        "meanProbability": 0.04936853317102854,
+        "expectedCalibrationError": 0.014297017650639055,
+        "rocAuc": 0.9064783668264499,
+        "meanProbability": 0.04598843578819198,
         "observedRate": 0.05995130858186245,
-        "bias": -0.010582775410833911,
+        "bias": -0.01396287279367047,
         "gameweekClusteredBrierDifference": {
           "gameweeks": 37,
-          "mean": -0.01026489941119713,
-          "lower95": -0.012669394061542378,
-          "upper95": -0.007860404760851881
+          "mean": -0.010038120630613673,
+          "lower95": -0.012431650733548707,
+          "upper95": -0.00764459052767864
         },
         "meanAbsoluteError": 0.6041996348143628,
         "rankCorrelation": 0.8121041614996306,
@@ -919,17 +1051,18 @@
       },
       "DEF": {
         "samples": 9331,
-        "brierScore": 0.0796927328260616,
+        "brierScore": 0.0795920653734858,
         "baseRateBrierScore": 0.09280827333614157,
-        "expectedCalibrationError": 0.013291394277140387,
-        "meanProbability": 0.09066402314864257,
+        "expectedCalibrationError": 0.012145750723395096,
+        "rocAuc": 0.8296090384489252,
+        "meanProbability": 0.0918808273496938,
         "observedRate": 0.10352588147036759,
-        "bias": -0.012861858321725025,
+        "bias": -0.011645054120673792,
         "gameweekClusteredBrierDifference": {
           "gameweeks": 37,
-          "mean": -0.013188870456210061,
-          "lower95": -0.015899757820971975,
-          "upper95": -0.010477983091448147
+          "mean": -0.013323347920275282,
+          "lower95": -0.01609077950396995,
+          "upper95": -0.010555916336580616
         },
         "meanAbsoluteError": 1.2076411960132944,
         "rankCorrelation": 0.6526043253681767,
@@ -937,17 +1070,18 @@
       },
       "MID": {
         "samples": 12740,
-        "brierScore": 0.06214967778649588,
+        "brierScore": 0.06210182394034376,
         "baseRateBrierScore": 0.07054069556817455,
-        "expectedCalibrationError": 0.010112323390895734,
-        "meanProbability": 0.066917503924649,
+        "expectedCalibrationError": 0.01044717425431675,
+        "rocAuc": 0.8374537777055365,
+        "meanProbability": 0.06691640502354332,
         "observedRate": 0.07637362637362638,
-        "bias": -0.00945612244897738,
+        "bias": -0.009457221350083062,
         "gameweekClusteredBrierDifference": {
           "gameweeks": 37,
-          "mean": -0.008362217306586692,
-          "lower95": -0.009590306854025421,
-          "upper95": -0.007134127759147962
+          "mean": -0.008410603367077158,
+          "lower95": -0.009611527435566591,
+          "upper95": -0.007209679298587723
         },
         "meanAbsoluteError": 1.0088854003139835,
         "rankCorrelation": 0.7369995554925759,
@@ -955,17 +1089,18 @@
       },
       "FWD": {
         "samples": 3140,
-        "brierScore": 0.07638666878980782,
+        "brierScore": 0.07647906719745232,
         "baseRateBrierScore": 0.08999999999999671,
-        "expectedCalibrationError": 0.013167515923566863,
-        "meanProbability": 0.08790828025477705,
+        "expectedCalibrationError": 0.012789490445859818,
+        "rocAuc": 0.8413830175666356,
+        "meanProbability": 0.08899140127388448,
         "observedRate": 0.1,
-        "bias": -0.012091719745222954,
+        "bias": -0.011008598726115523,
         "gameweekClusteredBrierDifference": {
           "gameweeks": 37,
-          "mean": -0.01353156036756686,
-          "lower95": -0.016613076964499155,
-          "upper95": -0.010450043770634567
+          "mean": -0.013418916463752333,
+          "lower95": -0.016561951557144475,
+          "upper95": -0.010275881370360191
         },
         "meanAbsoluteError": 1.1046496815286608,
         "rankCorrelation": 0.7806274446198138,
@@ -974,48 +1109,51 @@
     },
     "activeCandidates": {
       "samples": 5460,
-      "brierScore": 0.18551238241758233,
+      "brierScore": 0.18510974816849982,
       "baseRateBrierScore": 0.19137570610097682,
-      "expectedCalibrationError": 0.017136630036629838,
-      "meanProbability": 0.24083369963370005,
+      "expectedCalibrationError": 0.01648882783882811,
+      "rocAuc": 0.6152639970160639,
+      "meanProbability": 0.24227967032967138,
       "observedRate": 0.2578754578754579,
-      "bias": -0.017041758241757854,
+      "bias": -0.015595787545786527,
       "gameweekClusteredBrierDifference": {
         "gameweeks": 37,
-        "mean": -0.006155938428887686,
-        "lower95": -0.008970197757012775,
-        "upper95": -0.0033416791007625972
+        "mean": -0.006568957259249444,
+        "lower95": -0.009539353074892593,
+        "upper95": -0.003598561443606296
       }
     },
     "doubleGameweeks": {
       "samples": 416,
-      "brierScore": 0.10961694471153857,
+      "brierScore": 0.11382645673076917,
       "baseRateBrierScore": 0.15826090976331406,
-      "expectedCalibrationError": 0.04137740384615385,
-      "meanProbability": 0.17258413461538458,
+      "expectedCalibrationError": 0.03845673076923076,
+      "rocAuc": 0.863790711260406,
+      "meanProbability": 0.17295192307692292,
       "observedRate": 0.1971153846153846,
-      "bias": -0.024531250000000032,
+      "bias": -0.02416346153846169,
       "gameweekClusteredBrierDifference": {
         "gameweeks": 11,
-        "mean": 0.016790422709007727,
-        "lower95": -0.07802976263601072,
-        "upper95": 0.11161060805402617
+        "mean": 0.010272031876152303,
+        "lower95": -0.08522780174849282,
+        "upper95": 0.10577186550079742
       },
       "meanAbsoluteError": 1.6300480769230776
     },
     "singleGameweeks": {
       "samples": 28081,
-      "brierScore": 0.06699971920515953,
+      "brierScore": 0.0669206714148357,
       "baseRateBrierScore": 0.07721635712701792,
-      "expectedCalibrationError": 0.010791033082869205,
-      "meanProbability": 0.07353644813218538,
+      "expectedCalibrationError": 0.010792208254692284,
+      "rocAuc": 0.8430486018482606,
+      "meanProbability": 0.0736604109540275,
       "observedRate": 0.08432748121505644,
-      "bias": -0.010791033082871063,
+      "bias": -0.010667070261028935,
       "gameweekClusteredBrierDifference": {
         "gameweeks": 37,
-        "mean": -0.010307272036264666,
-        "lower95": -0.011288794791187141,
-        "upper95": -0.00932574928134219
+        "mean": -0.010396296461638027,
+        "lower95": -0.011448487884003662,
+        "upper95": -0.009344105039272393
       },
       "meanAbsoluteError": 1.029080160962925
     },
@@ -1033,10 +1171,209 @@
       "activeCandidateClusteredBrierImprovementLikely": true,
       "doubleGameweekBrierBeatsBaseRate": true,
       "doubleGameweekCalibrationWithinLimit": true,
-      "doubleGameweekBiasWithinLimit": true
+      "doubleGameweekBiasWithinLimit": true,
+      "overallBrierImproves": true,
+      "activeCandidateBrierImproves": true,
+      "everyPositionBrierWithinTolerance": true,
+      "overallDiscriminationDoesNotRegress": true,
+      "activeCandidateDiscriminationDoesNotRegress": true,
+      "pairedGameweekBrierDifferenceIsNegative": true
     },
     "releasePassed": true
   },
-  "version": "421861d6b74d",
-  "contentHash": "421861d6b74d04632c2c6b0ac5b0472be2f177075710acb74416f0b13187e2d8"
+  "incumbentComparison": {
+    "incumbentSignature": "cf9b7a842eb8",
+    "overall": {
+      "samples": 28497,
+      "candidateBrierScore": 0.06760540337579385,
+      "incumbentBrierScore": 0.06762184665052762,
+      "brierDifference": -0.000016443274733768387,
+      "candidateRocAuc": 0.8445979128780549,
+      "incumbentRocAuc": 0.8443714462788225,
+      "gameweekClusteredBrierDifference": {
+        "gameweeks": 37,
+        "mean": -0.00002829593422352637,
+        "lower95": -0.0002178587735029262,
+        "upper95": 0.00016126690505587345
+      }
+    },
+    "activeCandidates": {
+      "samples": 5460,
+      "candidateBrierScore": 0.18510974816849982,
+      "incumbentBrierScore": 0.18551238241758233,
+      "brierDifference": -0.00040263424908251744,
+      "candidateRocAuc": 0.6152639970160639,
+      "incumbentRocAuc": 0.6104202715550121,
+      "gameweekClusteredBrierDifference": {
+        "gameweeks": 37,
+        "mean": -0.00041301883036175876,
+        "lower95": -0.0012400424858133123,
+        "upper95": 0.0004140048250897948
+      }
+    },
+    "byPosition": {
+      "GK": {
+        "samples": 3286,
+        "candidateBrierScore": 0.046426083384053574,
+        "incumbentBrierScore": 0.04618558703590983,
+        "brierDifference": 0.00024049634814374277,
+        "candidateRocAuc": 0.9064783668264499,
+        "incumbentRocAuc": 0.9089293431909198,
+        "gameweekClusteredBrierDifference": {
+          "gameweeks": 37,
+          "mean": 0.00022677878058344845,
+          "lower95": -0.00015548412163070624,
+          "upper95": 0.0006090416827976031
+        }
+      },
+      "DEF": {
+        "samples": 9331,
+        "candidateBrierScore": 0.0795920653734858,
+        "incumbentBrierScore": 0.0796927328260616,
+        "brierDifference": -0.00010066745257579501,
+        "candidateRocAuc": 0.8296090384489252,
+        "incumbentRocAuc": 0.8288126238306857,
+        "gameweekClusteredBrierDifference": {
+          "gameweeks": 37,
+          "mean": -0.00013447746406522292,
+          "lower95": -0.0005889330202711123,
+          "upper95": 0.0003199780921406664
+        }
+      },
+      "MID": {
+        "samples": 12740,
+        "candidateBrierScore": 0.06210182394034376,
+        "incumbentBrierScore": 0.06214967778649588,
+        "brierDifference": -0.00004785384615212107,
+        "candidateRocAuc": 0.8374537777055365,
+        "incumbentRocAuc": 0.8366909357094688,
+        "gameweekClusteredBrierDifference": {
+          "gameweeks": 37,
+          "mean": -0.00004838606049047495,
+          "lower95": -0.00019175969627677233,
+          "upper95": 0.00009498757529582245
+        }
+      },
+      "FWD": {
+        "samples": 3140,
+        "candidateBrierScore": 0.07647906719745232,
+        "incumbentBrierScore": 0.07638666878980782,
+        "brierDifference": 0.00009239840764449503,
+        "candidateRocAuc": 0.8413830175666356,
+        "incumbentRocAuc": 0.8394615963685703,
+        "gameweekClusteredBrierDifference": {
+          "gameweeks": 37,
+          "mean": 0.00011264390381453074,
+          "lower95": -0.00038873322300693913,
+          "upper95": 0.0006140210306360006
+        }
+      }
+    },
+    "gates": {
+      "overallBrierImproves": true,
+      "activeCandidateBrierImproves": true,
+      "everyPositionBrierWithinTolerance": true,
+      "overallDiscriminationDoesNotRegress": true,
+      "activeCandidateDiscriminationDoesNotRegress": true,
+      "pairedGameweekBrierDifferenceIsNegative": true
+    },
+    "passed": true
+  },
+  "diagnostics": {
+    "distribution": {
+      "minimum": 0,
+      "p10": 0.001,
+      "p25": 0.004,
+      "median": 0.022000000000000002,
+      "p75": 0.11800000000000001,
+      "p90": 0.22899999999999998,
+      "maximum": 0.6829999999999999
+    },
+    "calibrationCaps": {
+      "GK": {
+        "rawThreshold": 0.498866,
+        "calibratedProbability": 0.382716
+      },
+      "DEF": {
+        "rawThreshold": 0.658126,
+        "calibratedProbability": 0.365248
+      },
+      "MID": {
+        "rawThreshold": 0.773627,
+        "calibratedProbability": 0.413978
+      },
+      "FWD": {
+        "rawThreshold": 0.74959,
+        "calibratedProbability": 0.516129
+      }
+    },
+    "historyCoverage": {
+      "previousSeason": 0.5266519282731515,
+      "opponent": 0.5536021335579184
+    },
+    "ablation": {
+      "incumbent": {
+        "features": [
+          "seasonPointsPerFixture",
+          "minutesPerTeamFixture",
+          "fixtureDifficulty",
+          "homeAway",
+          "value",
+          "fixtureCount"
+        ],
+        "brierScore": 0.06762184665052762,
+        "expectedCalibrationError": 0.011043618626523841,
+        "rocAuc": 0.8443714462788225,
+        "activeCandidateBrierScore": 0.18551238241758233,
+        "activeCandidateRocAuc": 0.6104202715550121
+      },
+      "playerHistory": {
+        "features": [
+          "seasonPointsPerFixture",
+          "minutesPerTeamFixture",
+          "fixtureDifficulty",
+          "homeAway",
+          "value",
+          "fixtureCount",
+          "previousSeasonPointsPer90",
+          "previousSeasonPointsPerFixture",
+          "previousSeasonMinutesShare",
+          "previousSeasonSampleStrength",
+          "previousSeasonAvailable",
+          "historyAdjustedPointsPerFixture"
+        ],
+        "brierScore": 0.0675703828122255,
+        "expectedCalibrationError": 0.010843422114608781,
+        "rocAuc": 0.8448655374154883,
+        "activeCandidateBrierScore": 0.185066511904763,
+        "activeCandidateRocAuc": 0.6151451583954052
+      },
+      "playerAndOpponentHistory": {
+        "features": [
+          "seasonPointsPerFixture",
+          "minutesPerTeamFixture",
+          "fixtureDifficulty",
+          "homeAway",
+          "value",
+          "fixtureCount",
+          "previousSeasonPointsPer90",
+          "previousSeasonPointsPerFixture",
+          "previousSeasonMinutesShare",
+          "previousSeasonSampleStrength",
+          "previousSeasonAvailable",
+          "historyAdjustedPointsPerFixture",
+          "opponentHistoryPointsPer90",
+          "opponentHistorySampleStrength",
+          "opponentHistoryCoverage"
+        ],
+        "brierScore": 0.06760540337579385,
+        "expectedCalibrationError": 0.011113871635611238,
+        "rocAuc": 0.8445979128780549,
+        "activeCandidateBrierScore": 0.18510974816849982,
+        "activeCandidateRocAuc": 0.6152639970160639
+      }
+    }
+  },
+  "version": "74eb051ee45a",
+  "contentHash": "74eb051ee45a555376c65a2a2ee23355e087e56120b1ea9159c3094eb886ba94"
 }

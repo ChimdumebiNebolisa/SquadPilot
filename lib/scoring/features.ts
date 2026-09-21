@@ -1,6 +1,7 @@
 import type { HistoricalDataset } from "@/lib/historical/normalize";
 import { getFixturesForTeamAndEvent, opponentDefenceStrength, type TeamFixtureSummary } from "@/lib/fpl/fixtures";
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/lib/fpl/types";
+import type { PlayerOpponentAggregate, PlayerSeasonAggregate } from "@/lib/data/types";
 import {
   buildFivePlusReplayFeatures,
   buildModelFeatures,
@@ -19,6 +20,8 @@ export interface FeatureContext {
   historical?: HistoricalDataset | null;
   opponentHistory?: OpponentHistoryView[];
   previousSeasonPointsPer90?: number | null;
+  fivePlusPreviousSeason?: PlayerSeasonAggregate | null;
+  fivePlusOpponentHistory?: PlayerOpponentAggregate[];
   fixtureSummary?: TeamFixtureSummary;
 }
 
@@ -125,6 +128,8 @@ export function extractFeaturesForPlayer(
     homeFixtureFraction,
     price: player.price,
     fixtureCount: fixtureSummary.fixtureCount,
+    previousSeason: context.fivePlusPreviousSeason,
+    opponentHistory: context.fivePlusOpponentHistory,
   });
   const currentBaselinePointsPer90 = player.minutesPlayedSeason > 0
     ? (player.totalPoints / player.minutesPlayedSeason) * 90

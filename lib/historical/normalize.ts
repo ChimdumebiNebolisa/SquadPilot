@@ -221,6 +221,25 @@ export function lookupOpponentHistory(
   };
 }
 
+export function lookupOpponentHistoryForSeason(
+  dataset: HistoricalDataset | null,
+  playerCode: number,
+  opponentTeamCode: number,
+  season: string,
+): PlayerOpponentAggregate | null {
+  return dataset?.opponentByPlayerAndTeamCode
+    .get(`${playerCode}:${opponentTeamCode}`)
+    ?.find((record) => record.source.season === season) ?? null;
+}
+
+export function seasonAggregate(
+  dataset: HistoricalDataset | null,
+  playerCode: number,
+  season: string,
+): PlayerSeasonAggregate | null {
+  return dataset?.seasonByPlayerCode.get(playerCode)?.find((record) => record.season === season) ?? null;
+}
+
 export function latestSeasonAggregate(dataset: HistoricalDataset | null, playerCode: number): PlayerSeasonAggregate | null {
   return dataset?.seasonByPlayerCode.get(playerCode)?.[0] ?? null;
 }

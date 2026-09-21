@@ -89,6 +89,7 @@ export function PlayerDetailSheet({ player, teamShortNames, onClose }: PlayerDet
 
         <div className="mt-4 space-y-1.5 text-[11px] leading-relaxed text-muted">
           {player.fixtureCount > 1 && <p>Double-gameweek probability has limited held-out evidence.</p>}
+          <p>The 5+ estimate combines current performance with previous-season player and opponent history when available.</p>
           <p><span className="font-medium text-muted-foreground">Fixtures:</span> {player.upcomingFixtures.map((fixture) => `${fixture.isHome ? "H" : "A"} · ${teamShortNames[fixture.opponentTeamId] ?? `T${fixture.opponentTeamId}`}`).join(" / ")}</p>
           <p><span className="font-medium text-muted-foreground">Opponent history:</span> {player.historicalSampleSize > 0 ? `${player.historicalSampleSize} match${player.historicalSampleSize === 1 ? "" : "es"}` : "insufficient data"}</p>
           <p><span className="font-medium text-muted-foreground">Sources:</span> {player.dataSources.join(" + ")}</p>

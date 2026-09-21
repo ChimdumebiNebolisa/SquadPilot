@@ -1,10 +1,20 @@
-import { latestSeasonAggregate, lookupOpponentHistory, type HistoricalDataset } from "@/lib/historical/normalize";
+import {
+  latestSeasonAggregate,
+  lookupOpponentHistory,
+  lookupOpponentHistoryForSeason,
+  seasonAggregate,
+  type HistoricalDataset,
+} from "@/lib/historical/normalize";
 import { getFixturesForTeamAndEvent } from "@/lib/fpl/fixtures";
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/lib/fpl/types";
 import { computeStartEstimate, countCompletedFixturesForTeam } from "@/lib/scoring/chance-of-starting";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
-import { predictCalibratedProjection, SCORING_MODEL_VERSION } from "@/lib/scoring/model";
+import {
+  predictCalibratedProjection,
+  SCORING_MODEL_HISTORY_SEASON,
+  SCORING_MODEL_VERSION,
+} from "@/lib/scoring/model";
 import { getWeightsForPosition } from "@/lib/scoring/weights";
 import type { FactorContribution, PlayerFeatureVector, ProjectedPlayer, ScoringWeights } from "@/lib/scoring/types";
 
@@ -67,12 +77,28 @@ export function scorePlayers(
       if (fixtureSummary.fixtureCount === 0) return null;
       const opponentHistory = historicalForPlayer(player, fixtureSummary.fixtures, options.historical);
       const previousSeasonBaseline = previousSeasonPointsPer90(player, options.historical);
+      const fivePlusPreviousSeason = seasonAggregate(
+        options.historical ?? null,
+        player.code,
+        SCORING_MODEL_HISTORY_SEASON,
+      );
+      const fivePlusOpponentHistory = fixtureSummary.fixtures.flatMap((fixture) => {
+        const record = lookupOpponentHistoryForSeason(
+          options.historical ?? null,
+          player.code,
+          fixture.opponentTeamCode,
+          SCORING_MODEL_HISTORY_SEASON,
+        );
+        return record ? [record] : [];
+      });
       const featureResult = extractFeaturesForPlayer(player, teams, fixtures, {
         nextGameweek,
         gameweeksPlayed,
         completedTeamFixtures: completedFixturesByTeam.get(player.teamId) ?? gameweeksPlayed,
         opponentHistory,
         previousSeasonPointsPer90: previousSeasonBaseline,
+        fivePlusPreviousSeason,
+        fivePlusOpponentHistory,
         fixtureSummary,
       });
       const weights = getWeightsForPosition(player.position);
