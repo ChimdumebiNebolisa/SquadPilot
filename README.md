@@ -39,13 +39,14 @@ npm run verify:reimport
 
 ## Projection model
 
-The checked-in model is trained on leakage-free pre-gameweek states from 2024-25 and held out on 2025-26. It uses position-specific ridge models, monotonic point calibration, and monotonic calibration for the chance of scoring at least five points. Its artifact version is derived from a SHA-256 content hash. FPL `ep_next` is comparator-only and is not an input.
+The checked-in model is trained on leakage-free pre-gameweek states from 2024-25 and held out on 2025-26. It uses position-specific ridge models, monotonic point calibration, position-specific single-gameweek probability calibration, and a dedicated double-gameweek probability calibration. Its artifact version is derived from a SHA-256 content hash. FPL `ep_next` is comparator-only and is not an input. The displayed 5+ figure is described as a model estimate because Vaastav's pinned match files do not contain every deadline-time live FPL field used in production.
 
 `npm run backtest` enforces these holdout gates:
 
 - MAE and gameweek rank correlation beat the recent-form baseline;
-- calibrated 5+ probability beats the base-rate Brier score;
+- the historically calibrated 5+ model estimate beats the base-rate Brier score;
 - expected calibration error is at most 0.08.
+- double-gameweek probability beats its base-rate Brier score, has expected calibration error at most 0.08, and absolute bias at most 0.05.
 
 Captain hit rate plus positional and double-gameweek slices are reported as diagnostics. A valid fixture feed with no next-gameweek fixture is treated as a confirmed blank, so the player is excluded. Missing or invalid fixture data fails safely instead of creating neutral projections.
 

@@ -17,6 +17,7 @@ export interface PositionModel {
 export interface ScoringModelArtifact {
   features: readonly ModelFeature[];
   models: Record<PlayerPosition, PositionModel>;
+  doubleGameweekFivePlusCalibration?: CalibrationPoint[];
 }
 
 function clamp(value: number, minimum = 0, maximum = 1): number {
@@ -63,7 +64,12 @@ export function predictWithModelArtifact(
   return {
     projectedPoints: Number((blendedPerFixture * fixtureCount).toFixed(1)),
     fivePlusProbability: Number((clamp(
-      calibrate(model.fivePlusCalibration, rawPerFixture * fixtureCount),
+      calibrate(
+        fixtureCount > 1 && artifact.doubleGameweekFivePlusCalibration?.length
+          ? artifact.doubleGameweekFivePlusCalibration
+          : model.fivePlusCalibration,
+        rawPerFixture * fixtureCount,
+      ),
     ) * 100).toFixed(1)),
   };
 }

@@ -53,7 +53,15 @@ for (const season of manifest.seasons) {
 const model = JSON.parse(await readFile(join(root, "data", "model", "scoring-model.json"), "utf8"));
 const { version, contentHash, ...content } = model;
 const expectedHash = createHash("sha256").update(JSON.stringify(content)).digest("hex");
-if (contentHash !== expectedHash || version !== expectedHash.slice(0, 12) || model.validation?.releasePassed !== true) {
+if (model.schemaVersion !== 2
+  || !Array.isArray(model.doubleGameweekFivePlusCalibration)
+  || model.doubleGameweekFivePlusCalibration.length === 0
+  || model.validation?.releaseGates?.doubleGameweekBrierBeatsBaseRate !== true
+  || model.validation?.releaseGates?.doubleGameweekCalibrationWithinLimit !== true
+  || model.validation?.releaseGates?.doubleGameweekBiasWithinLimit !== true
+  || contentHash !== expectedHash
+  || version !== expectedHash.slice(0, 12)
+  || model.validation?.releasePassed !== true) {
   throw new Error("Scoring model artifact hash or validation gate is invalid.");
 }
 

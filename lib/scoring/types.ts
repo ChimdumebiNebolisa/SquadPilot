@@ -55,7 +55,7 @@ export interface PlayerExplanation {
 export interface ProjectedPlayer extends NormalizedPlayer {
   projectedScore: number;
   projectedPoints: number;
-  /** Held-out calibrated probability from 0–100. */
+  /** Historically calibrated model estimate from 0–100. */
   fivePlusProbability: number;
   /** Deterministic 0–100 start estimate, not a calibrated probability. */
   startEstimatePercent: number;

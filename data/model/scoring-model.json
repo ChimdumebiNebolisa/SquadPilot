@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "features": [
     "recentForm",
     "pointsPerGame",
@@ -34,11 +34,11 @@
           "value": 0.038647
         },
         {
-          "threshold": 0.298304,
+          "threshold": 0.298303,
           "value": 0.142857
         },
         {
-          "threshold": 0.430317,
+          "threshold": 0.430318,
           "value": 0.217391
         },
         {
@@ -54,7 +54,7 @@
           "value": 0.978261
         },
         {
-          "threshold": 1.31626,
+          "threshold": 1.316261,
           "value": 1
         },
         {
@@ -66,7 +66,7 @@
           "value": 1.608696
         },
         {
-          "threshold": 2.003471,
+          "threshold": 2.003472,
           "value": 2.152174
         },
         {
@@ -74,7 +74,7 @@
           "value": 2.434783
         },
         {
-          "threshold": 2.695893,
+          "threshold": 2.695894,
           "value": 2.735507
         },
         {
@@ -82,15 +82,15 @@
           "value": 3
         },
         {
-          "threshold": 3.206341,
+          "threshold": 3.206342,
           "value": 3.05163
         },
         {
-          "threshold": 3.706395,
+          "threshold": 3.706396,
           "value": 3.289855
         },
         {
-          "threshold": 4.600341,
+          "threshold": 4.600342,
           "value": 3.903226
         }
       ],
@@ -136,7 +136,7 @@
           "value": 0
         },
         {
-          "threshold": 0.086577,
+          "threshold": 0.086576,
           "value": 0.001672
         },
         {
@@ -144,11 +144,11 @@
           "value": 0.004348
         },
         {
-          "threshold": 0.298304,
+          "threshold": 0.298303,
           "value": 0.012422
         },
         {
-          "threshold": 0.785651,
+          "threshold": 0.78565,
           "value": 0.026087
         },
         {
@@ -176,11 +176,11 @@
           "value": 0.181159
         },
         {
-          "threshold": 2.814603,
+          "threshold": 2.814604,
           "value": 0.217391
         },
         {
-          "threshold": 3.225002,
+          "threshold": 3.225003,
           "value": 0.230435
         },
         {
@@ -188,7 +188,7 @@
           "value": 0.246377
         },
         {
-          "threshold": 6.944825,
+          "threshold": 6.944826,
           "value": 0.451613
         }
       ],
@@ -240,11 +240,11 @@
           "value": 0.655251
         },
         {
-          "threshold": 0.920574,
+          "threshold": 0.920575,
           "value": 0.765411
         },
         {
-          "threshold": 1.094652,
+          "threshold": 1.094653,
           "value": 0.924658
         },
         {
@@ -260,7 +260,7 @@
           "value": 1.416667
         },
         {
-          "threshold": 1.865214,
+          "threshold": 1.865215,
           "value": 1.765982
         },
         {
@@ -268,7 +268,7 @@
           "value": 1.791096
         },
         {
-          "threshold": 2.099704,
+          "threshold": 2.099705,
           "value": 2.318493
         },
         {
@@ -296,7 +296,7 @@
           "value": 3.157534
         },
         {
-          "threshold": 3.478909,
+          "threshold": 3.47891,
           "value": 3.34589
         },
         {
@@ -314,7 +314,7 @@
           "value": 0.00274
         },
         {
-          "threshold": 0.215612,
+          "threshold": 0.215613,
           "value": 0.005708
         },
         {
@@ -326,15 +326,15 @@
           "value": 0.020548
         },
         {
-          "threshold": 0.55589,
+          "threshold": 0.555891,
           "value": 0.020548
         },
         {
-          "threshold": 0.607705,
+          "threshold": 0.607706,
           "value": 0.027397
         },
         {
-          "threshold": 0.929174,
+          "threshold": 0.929175,
           "value": 0.056164
         },
         {
@@ -350,11 +350,11 @@
           "value": 0.09589
         },
         {
-          "threshold": 1.278318,
+          "threshold": 1.278319,
           "value": 0.10274
         },
         {
-          "threshold": 1.620146,
+          "threshold": 1.620147,
           "value": 0.119863
         },
         {
@@ -370,15 +370,15 @@
           "value": 0.212329
         },
         {
-          "threshold": 2.583926,
+          "threshold": 2.583927,
           "value": 0.240868
         },
         {
-          "threshold": 2.694766,
+          "threshold": 2.694767,
           "value": 0.246575
         },
         {
-          "threshold": 2.829433,
+          "threshold": 2.829434,
           "value": 0.246575
         },
         {
@@ -386,11 +386,11 @@
           "value": 0.335616
         },
         {
-          "threshold": 3.582795,
+          "threshold": 3.582796,
           "value": 0.363014
         },
         {
-          "threshold": 8.209732,
+          "threshold": 8.209733,
           "value": 0.408451
         }
       ],
@@ -434,7 +434,7 @@
           "value": 0.246811
         },
         {
-          "threshold": 0.53544,
+          "threshold": 0.535439,
           "value": 0.438776
         },
         {
@@ -442,7 +442,7 @@
           "value": 0.589286
         },
         {
-          "threshold": 0.658433,
+          "threshold": 0.658432,
           "value": 0.642857
         },
         {
@@ -450,19 +450,19 @@
           "value": 0.771259
         },
         {
-          "threshold": 1.027272,
+          "threshold": 1.027271,
           "value": 1.02551
         },
         {
-          "threshold": 1.202965,
+          "threshold": 1.202964,
           "value": 1.465561
         },
         {
-          "threshold": 1.446733,
+          "threshold": 1.446732,
           "value": 1.471939
         },
         {
-          "threshold": 1.534757,
+          "threshold": 1.534756,
           "value": 1.505102
         },
         {
@@ -470,11 +470,11 @@
           "value": 1.853316
         },
         {
-          "threshold": 2.094969,
+          "threshold": 2.094968,
           "value": 1.94898
         },
         {
-          "threshold": 2.191839,
+          "threshold": 2.191838,
           "value": 2.104592
         },
         {
@@ -482,7 +482,7 @@
           "value": 2.201531
         },
         {
-          "threshold": 2.591916,
+          "threshold": 2.591915,
           "value": 2.744898
         },
         {
@@ -490,19 +490,19 @@
           "value": 2.931122
         },
         {
-          "threshold": 3.039818,
+          "threshold": 3.039817,
           "value": 3.118622
         },
         {
-          "threshold": 3.635856,
+          "threshold": 3.635855,
           "value": 3.359694
         },
         {
-          "threshold": 4.707523,
+          "threshold": 4.707521,
           "value": 3.802296
         },
         {
-          "threshold": 8.303242,
+          "threshold": 8.303241,
           "value": 5.66185
         }
       ],
@@ -536,7 +536,7 @@
           "value": 0.007653
         },
         {
-          "threshold": 0.540449,
+          "threshold": 0.540448,
           "value": 0.010204
         },
         {
@@ -544,11 +544,11 @@
           "value": 0.012755
         },
         {
-          "threshold": 0.877039,
+          "threshold": 0.877038,
           "value": 0.030612
         },
         {
-          "threshold": 0.95716,
+          "threshold": 0.957159,
           "value": 0.045918
         },
         {
@@ -560,11 +560,11 @@
           "value": 0.073129
         },
         {
-          "threshold": 2.005602,
+          "threshold": 2.005601,
           "value": 0.097959
         },
         {
-          "threshold": 2.10511,
+          "threshold": 2.105109,
           "value": 0.112245
         },
         {
@@ -572,7 +572,7 @@
           "value": 0.117347
         },
         {
-          "threshold": 2.495466,
+          "threshold": 2.495465,
           "value": 0.117347
         },
         {
@@ -584,27 +584,27 @@
           "value": 0.214286
         },
         {
-          "threshold": 3.237413,
+          "threshold": 3.237412,
           "value": 0.231293
         },
         {
-          "threshold": 3.45223,
+          "threshold": 3.452229,
           "value": 0.25
         },
         {
-          "threshold": 3.733588,
+          "threshold": 3.733587,
           "value": 0.255102
         },
         {
-          "threshold": 4.11792,
+          "threshold": 4.117919,
           "value": 0.295918
         },
         {
-          "threshold": 4.978192,
+          "threshold": 4.978191,
           "value": 0.306122
         },
         {
-          "threshold": 14.69764,
+          "threshold": 14.697638,
           "value": 0.526012
         }
       ],
@@ -628,11 +628,11 @@
           "value": 0.020408
         },
         {
-          "threshold": 0.083778,
+          "threshold": 0.083779,
           "value": 0.043084
         },
         {
-          "threshold": 0.120407,
+          "threshold": 0.120406,
           "value": 0.05102
         },
         {
@@ -672,7 +672,7 @@
           "value": 2.346939
         },
         {
-          "threshold": 2.929706,
+          "threshold": 2.929705,
           "value": 2.44898
         },
         {
@@ -688,11 +688,11 @@
           "value": 4.020408
         },
         {
-          "threshold": 5.006164,
+          "threshold": 5.006165,
           "value": 4.387755
         },
         {
-          "threshold": 6.083026,
+          "threshold": 6.083027,
           "value": 5.693878
         },
         {
@@ -742,15 +742,15 @@
           "value": 0
         },
         {
-          "threshold": 0.083778,
+          "threshold": 0.083779,
           "value": 0
         },
         {
-          "threshold": 0.120407,
+          "threshold": 0.120406,
           "value": 0
         },
         {
-          "threshold": 0.120407,
+          "threshold": 0.120406,
           "value": 0
         },
         {
@@ -762,11 +762,11 @@
           "value": 0.020408
         },
         {
-          "threshold": 0.563427,
+          "threshold": 0.563426,
           "value": 0.020408
         },
         {
-          "threshold": 0.602838,
+          "threshold": 0.602837,
           "value": 0.020408
         },
         {
@@ -778,7 +778,7 @@
           "value": 0.091837
         },
         {
-          "threshold": 1.521466,
+          "threshold": 1.521465,
           "value": 0.122449
         },
         {
@@ -822,7 +822,7 @@
           "value": 0.428571
         },
         {
-          "threshold": 7.498552,
+          "threshold": 7.498553,
           "value": 0.55102
         },
         {
@@ -834,58 +834,219 @@
       "sampleSize": 2897
     }
   },
+  "doubleGameweekFivePlusCalibration": [
+    {
+      "threshold": 0,
+      "value": 0
+    },
+    {
+      "threshold": 0,
+      "value": 0
+    },
+    {
+      "threshold": 0,
+      "value": 0
+    },
+    {
+      "threshold": 0.017351,
+      "value": 0
+    },
+    {
+      "threshold": 0.02061,
+      "value": 0
+    },
+    {
+      "threshold": 0.023236,
+      "value": 0
+    },
+    {
+      "threshold": 0.023236,
+      "value": 0
+    },
+    {
+      "threshold": 0.027737,
+      "value": 0
+    },
+    {
+      "threshold": 0.1336,
+      "value": 0
+    },
+    {
+      "threshold": 0.179789,
+      "value": 0
+    },
+    {
+      "threshold": 0.185674,
+      "value": 0
+    },
+    {
+      "threshold": 0.187983,
+      "value": 0
+    },
+    {
+      "threshold": 0.256693,
+      "value": 0
+    },
+    {
+      "threshold": 0.321803,
+      "value": 0
+    },
+    {
+      "threshold": 0.330456,
+      "value": 0
+    },
+    {
+      "threshold": 0.368535,
+      "value": 0
+    },
+    {
+      "threshold": 0.406384,
+      "value": 0
+    },
+    {
+      "threshold": 0.440258,
+      "value": 0
+    },
+    {
+      "threshold": 0.492893,
+      "value": 0
+    },
+    {
+      "threshold": 0.498778,
+      "value": 0
+    },
+    {
+      "threshold": 0.560303,
+      "value": 0
+    },
+    {
+      "threshold": 0.673676,
+      "value": 0
+    },
+    {
+      "threshold": 0.780649,
+      "value": 0
+    },
+    {
+      "threshold": 0.920811,
+      "value": 0
+    },
+    {
+      "threshold": 1.410121,
+      "value": 0.095238
+    },
+    {
+      "threshold": 2.274054,
+      "value": 0.214286
+    },
+    {
+      "threshold": 2.958511,
+      "value": 0.285714
+    },
+    {
+      "threshold": 3.065086,
+      "value": 0.428571
+    },
+    {
+      "threshold": 3.562763,
+      "value": 0.428571
+    },
+    {
+      "threshold": 4.856998,
+      "value": 0.428571
+    },
+    {
+      "threshold": 5.283727,
+      "value": 0.5
+    },
+    {
+      "threshold": 6.200796,
+      "value": 0.535714
+    },
+    {
+      "threshold": 7.574063,
+      "value": 0.619048
+    },
+    {
+      "threshold": 14.697638,
+      "value": 0.833333
+    }
+  ],
   "validation": {
     "samples": 28497,
     "meanAbsoluteError": 1.0378531073446287,
     "recentFormBaselineMeanAbsoluteError": 1.0512358025991289,
     "rankCorrelation": 0.7241414693970013,
     "recentFormBaselineRankCorrelation": 0.723059145376797,
-    "brierScore": 0.06715398434923787,
+    "brierScore": 0.06699166736850287,
     "baseRateBrierScore": 0.07858244000000912,
-    "expectedCalibrationError": 0.010170474084992286,
+    "expectedCalibrationError": 0.009841843001018463,
     "captainHitRate": 0.4594594594594595,
     "byPosition": {
       "GK": {
         "samples": 3286,
         "meanAbsoluteError": 0.6041996348143628,
+        "brierScore": 0.04576565763846588,
+        "expectedCalibrationError": 0.009342970176506446,
         "rankCorrelation": 0.8121041614996306,
         "recentFormBaselineRankCorrelation": 0.8251200718242713
       },
       "DEF": {
         "samples": 9331,
         "meanAbsoluteError": 1.2076411960132944,
+        "brierScore": 0.07910715903975833,
+        "expectedCalibrationError": 0.012858750401885631,
         "rankCorrelation": 0.6526043253681767,
         "recentFormBaselineRankCorrelation": 0.6478667511968981
       },
       "MID": {
         "samples": 12740,
         "meanAbsoluteError": 1.0088854003139835,
+        "brierScore": 0.061537428963892735,
+        "expectedCalibrationError": 0.010361773940344694,
         "rankCorrelation": 0.7369995554925759,
         "recentFormBaselineRankCorrelation": 0.7368373732568404
       },
       "FWD": {
         "samples": 3140,
         "meanAbsoluteError": 1.1046496815286608,
+        "brierScore": 0.07533116178343985,
+        "expectedCalibrationError": 0.009770700636942582,
         "rankCorrelation": 0.7806274446198138,
         "recentFormBaselineRankCorrelation": 0.781443007554398
       }
     },
     "doubleGameweeks": {
       "samples": 416,
+      "brierScore": 0.1016745168269231,
+      "baseRateBrierScore": 0.15826090976331406,
+      "expectedCalibrationError": 0.039512019230769135,
+      "meanProbability": 0.1804014423076925,
+      "observedRate": 0.1971153846153846,
+      "bias": -0.016713942307692103,
       "meanAbsoluteError": 1.6300480769230776
     },
     "singleGameweeks": {
       "samples": 28081,
+      "brierScore": 0.06647786567430741,
+      "baseRateBrierScore": 0.07721635712701792,
+      "expectedCalibrationError": 0.009603575371248282,
+      "meanProbability": 0.07499369680566474,
+      "observedRate": 0.08432748121505644,
+      "bias": -0.009333784409391699,
       "meanAbsoluteError": 1.029080160962925
     },
     "releaseGates": {
       "maeBeatsRecentForm": true,
       "rankBeatsRecentForm": true,
       "brierBeatsBaseRate": true,
-      "calibrationWithinLimit": true
+      "calibrationWithinLimit": true,
+      "doubleGameweekBrierBeatsBaseRate": true,
+      "doubleGameweekCalibrationWithinLimit": true,
+      "doubleGameweekBiasWithinLimit": true
     },
     "releasePassed": true
   },
-  "version": "1f3236a5dc6c",
-  "contentHash": "1f3236a5dc6cbdea402a3270d0f97929f72a235c3fb737135faa965fed4fdad3"
+  "version": "62ff0439c766",
+  "contentHash": "62ff0439c766e29e7ac5d5e8e20994bc70041dff50d0026248c7ad75057a1e80"
 }

@@ -13,6 +13,9 @@ import type { NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/li
 import { normalizeVaastavRows } from "@/lib/historical/normalize";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
+import { MODEL_FEATURES, type ModelFeatureVector } from "@/lib/scoring/model-features";
+import { predictWithModelArtifact, type PositionModel, type ScoringModelArtifact } from "@/lib/scoring/model-runtime";
+import { startOutlookLabel } from "@/lib/scoring/start-outlook";
 import type { FactorContribution, PlayerFeatureVector } from "@/lib/scoring/types";
 
 const source = { source: "fpl-live" as const, season: "current", gameweek: null, fixtureId: null, asOf: "2026-01-01T00:00:00Z", confidence: "high" as const, availability: "available" as const };
@@ -190,4 +193,34 @@ test("explanations derive downside text from the weakest player-specific factor"
   }));
   const explanation = buildPlayerExplanation({ position: "DEF", contributions });
   assert.equal(explanation.mainRisk, "pricey for output.");
+});
+
+test("start outlook uses broad labels instead of pseudo-precise percentages", () => {
+  assert.equal(startOutlookLabel(100), "Regular starter");
+  assert.equal(startOutlookLabel(85), "Regular starter");
+  assert.equal(startOutlookLabel(84), "Likely starter");
+  assert.equal(startOutlookLabel(65), "Likely starter");
+  assert.equal(startOutlookLabel(64), "Rotation risk");
+  assert.equal(startOutlookLabel(35), "Rotation risk");
+  assert.equal(startOutlookLabel(34), "Unlikely starter");
+});
+
+test("double gameweeks use their dedicated five-plus calibration", () => {
+  const coefficients = Object.fromEntries(MODEL_FEATURES.map((feature) => [feature, 0])) as PositionModel["coefficients"];
+  const positionModel: PositionModel = {
+    intercept: 1,
+    coefficients,
+    pointsCalibration: [{ threshold: 15, value: 1 }],
+    fivePlusCalibration: [{ threshold: 15, value: 0.1 }],
+    recentFormBlend: 0,
+  };
+  const artifact: ScoringModelArtifact = {
+    features: MODEL_FEATURES,
+    models: { GK: positionModel, DEF: positionModel, MID: positionModel, FWD: positionModel },
+    doubleGameweekFivePlusCalibration: [{ threshold: 30, value: 0.7 }],
+  };
+  const features = Object.fromEntries(MODEL_FEATURES.map((feature) => [feature, 0])) as ModelFeatureVector;
+
+  assert.equal(predictWithModelArtifact(artifact, "FWD", features, 1).fivePlusProbability, 10);
+  assert.equal(predictWithModelArtifact(artifact, "FWD", features, 2).fivePlusProbability, 70);
 });

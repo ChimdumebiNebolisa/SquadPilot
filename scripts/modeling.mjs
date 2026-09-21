@@ -226,13 +226,16 @@ export function trainModels(samples) {
   return Object.fromEntries(POSITIONS.map((position) => {
     const positionSamples = samples.filter((sample) => sample.position === position);
     const model = fitRidge(positionSamples);
-    const scored = positionSamples.map((sample) => ({
-      sample,
-      perFixture: rawPrediction(model, sample.features),
-    }));
-    return [position, {
+    const storedModel = {
       intercept: round(model.intercept),
       coefficients: Object.fromEntries(Object.entries(model.coefficients).map(([key, value]) => [key, round(value)])),
+    };
+    const scored = positionSamples.map((sample) => ({
+      sample,
+      perFixture: rawPrediction(storedModel, sample.features),
+    }));
+    return [position, {
+      ...storedModel,
       pointsCalibration: fitIsotonic(scored.map(({ sample, perFixture }) => ({ x: perFixture, y: sample.targetPerFixture }))),
       fivePlusCalibration: fitIsotonic(scored.map(({ sample, perFixture }) => ({
         x: perFixture * sample.fixtureCount,
@@ -244,9 +247,18 @@ export function trainModels(samples) {
   }));
 }
 
-export function predictSample(models, sample) {
+export function trainDoubleGameweekCalibration(models, samples) {
+  return fitIsotonic(samples
+    .filter((sample) => sample.fixtureCount > 1)
+    .map((sample) => ({
+      x: rawPrediction(models[sample.position], sample.features) * sample.fixtureCount,
+      y: sample.fivePlus,
+    })));
+}
+
+export function predictSample(models, sample, doubleGameweekFivePlusCalibration = []) {
   const prediction = predictWithModelArtifact(
-    { features: MODEL_FEATURES, models },
+    { features: MODEL_FEATURES, models, doubleGameweekFivePlusCalibration },
     sample.position,
     sample.features,
     sample.fixtureCount,
@@ -318,9 +330,9 @@ function captainHitRate(rows) {
   }));
 }
 
-export function evaluateModels(models, samples) {
+export function evaluateModels(models, samples, doubleGameweekFivePlusCalibration = []) {
   const rows = samples.map((sample) => {
-    const prediction = predictSample(models, sample);
+    const prediction = predictSample(models, sample, doubleGameweekFivePlusCalibration);
     return {
       sample,
       projection: prediction.projectedPoints,
@@ -332,6 +344,19 @@ export function evaluateModels(models, samples) {
   const baseRate = mean(rows.map((row) => row.sample.fivePlus));
   const brier = mean(rows.map((row) => (row.probability - row.sample.fivePlus) ** 2));
   const baseRateBrier = mean(rows.map((row) => (baseRate - row.sample.fivePlus) ** 2));
+  const probabilitySlice = (subset) => {
+    const observedRate = mean(subset.map((row) => row.sample.fivePlus));
+    const meanProbability = mean(subset.map((row) => row.probability));
+    return {
+      samples: subset.length,
+      brierScore: mean(subset.map((row) => (row.probability - row.sample.fivePlus) ** 2)),
+      baseRateBrierScore: mean(subset.map((row) => (observedRate - row.sample.fivePlus) ** 2)),
+      expectedCalibrationError: expectedCalibrationError(subset),
+      meanProbability,
+      observedRate,
+      bias: meanProbability - observedRate,
+    };
+  };
   const result = {
     samples: rows.length,
     meanAbsoluteError: mean(rows.map((row) => row.error)),
@@ -347,6 +372,8 @@ export function evaluateModels(models, samples) {
       return [position, {
         samples: subset.length,
         meanAbsoluteError: mean(subset.map((row) => row.error)),
+        brierScore: mean(subset.map((row) => (row.probability - row.sample.fivePlus) ** 2)),
+        expectedCalibrationError: expectedCalibrationError(subset),
         rankCorrelation: rankCorrelationByRound(subset, "projection"),
         recentFormBaselineRankCorrelation: rankCorrelationByRound(
           subset.map((row) => ({ ...row, baseline: row.sample.recentFormBaseline })),
@@ -356,11 +383,11 @@ export function evaluateModels(models, samples) {
     })),
     doubleGameweeks: (() => {
       const subset = rows.filter((row) => row.sample.fixtureCount > 1);
-      return { samples: subset.length, meanAbsoluteError: mean(subset.map((row) => row.error)) };
+      return { ...probabilitySlice(subset), meanAbsoluteError: mean(subset.map((row) => row.error)) };
     })(),
     singleGameweeks: (() => {
       const subset = rows.filter((row) => row.sample.fixtureCount === 1);
-      return { samples: subset.length, meanAbsoluteError: mean(subset.map((row) => row.error)) };
+      return { ...probabilitySlice(subset), meanAbsoluteError: mean(subset.map((row) => row.error)) };
     })(),
   };
   result.releaseGates = {
@@ -368,6 +395,12 @@ export function evaluateModels(models, samples) {
     rankBeatsRecentForm: result.rankCorrelation > result.recentFormBaselineRankCorrelation,
     brierBeatsBaseRate: result.brierScore < result.baseRateBrierScore,
     calibrationWithinLimit: result.expectedCalibrationError <= 0.08,
+    doubleGameweekBrierBeatsBaseRate: result.doubleGameweeks.samples === 0
+      || result.doubleGameweeks.brierScore < result.doubleGameweeks.baseRateBrierScore,
+    doubleGameweekCalibrationWithinLimit: result.doubleGameweeks.samples === 0
+      || result.doubleGameweeks.expectedCalibrationError <= 0.08,
+    doubleGameweekBiasWithinLimit: result.doubleGameweeks.samples === 0
+      || Math.abs(result.doubleGameweeks.bias) <= 0.05,
   };
   result.releasePassed = Object.values(result.releaseGates).every(Boolean);
   return result;

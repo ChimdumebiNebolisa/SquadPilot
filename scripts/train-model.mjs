@@ -6,6 +6,7 @@ import {
   evaluateModels,
   loadTrainingSeason,
   MODEL_FEATURES,
+  trainDoubleGameweekCalibration,
   trainModels,
 } from "./modeling.mjs";
 
@@ -16,15 +17,17 @@ const validationSnapshot = await loadTrainingSeason(validationSeason);
 const trainingSamples = buildWalkForwardSamples(trainingSnapshot.performances);
 const validationSamples = buildWalkForwardSamples(validationSnapshot.performances);
 const models = trainModels(trainingSamples);
-const validation = evaluateModels(models, validationSamples);
+const doubleGameweekFivePlusCalibration = trainDoubleGameweekCalibration(models, trainingSamples);
+const validation = evaluateModels(models, validationSamples, doubleGameweekFivePlusCalibration);
 
 const content = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   features: MODEL_FEATURES,
   trainingSeason,
   validationSeason,
   sourceCommit: trainingSnapshot.source.commitSha,
   models,
+  doubleGameweekFivePlusCalibration,
   validation,
 };
 const contentHash = createHash("sha256").update(JSON.stringify(content)).digest("hex");
