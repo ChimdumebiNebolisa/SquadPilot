@@ -77,7 +77,12 @@ export function scorePlayers(
       });
       const weights = getWeightsForPosition(player.position);
       const contributions = toContributions(featureResult.features, weights);
-      const calibrated = predictCalibratedProjection(player.position, featureResult.features, featureResult.fixtureCount);
+      const calibrated = predictCalibratedProjection(
+        player.position,
+        featureResult.features,
+        featureResult.fivePlusFeatures,
+        featureResult.fixtureCount,
+      );
       const projectedScore = calibrated.projectedPoints;
       const projectedPoints = calibrated.projectedPoints;
       const startEstimate = computeStartEstimate(player, {

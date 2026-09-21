@@ -1,18 +1,20 @@
 import modelArtifact from "@/data/model/scoring-model.json";
 import type { PlayerPosition } from "@/lib/fpl/types";
-import type { ModelFeatureVector } from "@/lib/scoring/model-features";
+import type { FivePlusFeatureVector, ModelFeatureVector } from "@/lib/scoring/model-features";
 import { predictWithModelArtifact, type ScoringModelArtifact } from "@/lib/scoring/model-runtime";
 import type { PlayerFeatureVector } from "@/lib/scoring/types";
 
 export function predictCalibratedProjection(
   position: PlayerPosition,
   features: PlayerFeatureVector,
+  fivePlusFeatures: FivePlusFeatureVector,
   fixtureCount: number,
 ): { projectedPoints: number; fivePlusProbability: number } {
   return predictWithModelArtifact(
     modelArtifact as ScoringModelArtifact,
     position,
     features as ModelFeatureVector,
+    fivePlusFeatures,
     fixtureCount,
   );
 }

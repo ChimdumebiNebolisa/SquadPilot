@@ -87,6 +87,13 @@ export interface RecommendData {
     trainingSeason: string;
     validationSeason: string;
     fplExpectedPoints: "comparator-only";
+    fivePlusMetric: {
+      kind: "historically-calibrated-model-estimate";
+      target: "total-gameweek-points-at-least-5";
+      featureParity: "production-replay";
+      availabilityTreatment: "reported-separately";
+      doubleGameweekEvidence: "limited-sample";
+    };
   };
   userTeam?: {
     teamId: number;

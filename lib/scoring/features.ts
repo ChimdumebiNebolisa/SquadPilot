@@ -1,7 +1,11 @@
 import type { HistoricalDataset } from "@/lib/historical/normalize";
 import { getFixturesForTeamAndEvent, opponentDefenceStrength, type TeamFixtureSummary } from "@/lib/fpl/fixtures";
 import type { NormalizedFixture, NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/lib/fpl/types";
-import { buildModelFeatures } from "@/lib/scoring/model-features";
+import {
+  buildFivePlusReplayFeatures,
+  buildModelFeatures,
+  type FivePlusFeatureVector,
+} from "@/lib/scoring/model-features";
 import type { PlayerFeatureVector } from "@/lib/scoring/types";
 
 function clamp(value: number, min = 0, max = 1): number {
@@ -20,6 +24,7 @@ export interface FeatureContext {
 
 export interface PlayerFeatureResult {
   features: PlayerFeatureVector;
+  fivePlusFeatures: FivePlusFeatureVector;
   upcomingFixtures: ReturnType<typeof getFixturesForTeamAndEvent>["fixtures"];
   fixtureCount: number;
   expectedMinutes: number;
@@ -112,6 +117,15 @@ export function extractFeaturesForPlayer(
     price: player.price,
     historicalOpponentRatio,
   });
+  const fivePlusFeatures = buildFivePlusReplayFeatures({
+    totalPoints: player.totalPoints,
+    minutes: player.minutesPlayedSeason,
+    completedTeamFixtures: teamFixturesPlayed,
+    averageFixtureDifficulty: averageDifficulty,
+    homeFixtureFraction,
+    price: player.price,
+    fixtureCount: fixtureSummary.fixtureCount,
+  });
   const currentBaselinePointsPer90 = player.minutesPlayedSeason > 0
     ? (player.totalPoints / player.minutesPlayedSeason) * 90
     : player.pointsPerGame;
@@ -131,6 +145,7 @@ export function extractFeaturesForPlayer(
       fplExpectedPoints,
       attackingUpside,
     },
+    fivePlusFeatures,
     upcomingFixtures: fixtureSummary.fixtures,
     fixtureCount: fixtureSummary.fixtureCount,
     expectedMinutes: expectedMinutes * 90,

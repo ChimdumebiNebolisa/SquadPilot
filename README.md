@@ -39,16 +39,17 @@ npm run verify:reimport
 
 ## Projection model
 
-The checked-in model is trained on leakage-free pre-gameweek states from 2024-25 and held out on 2025-26. It uses position-specific ridge models, monotonic point calibration, position-specific single-gameweek probability calibration, and a dedicated double-gameweek probability calibration. Its artifact version is derived from a SHA-256 content hash. FPL `ep_next` is comparator-only and is not an input. The displayed 5+ figure is described as a model estimate because Vaastav's pinned match files do not contain every deadline-time live FPL field used in production.
+The checked-in model is trained on leakage-free pre-gameweek states from 2024-25 and held out on 2025-26. Projected points use position-specific ridge models and monotonic point calibration. The separate 5+ classifier uses only inputs that the same pure feature builder can reproduce historically and in production: season points and minutes per completed team fixture, fixture difficulty, venue mix, value efficiency, and fixture count. It has position-specific single-gameweek calibration and a pooled double-gameweek calibration. Availability is intentionally reported through the separate starting outlook rather than folded into the calibrated statistic. The artifact version is derived from a SHA-256 content hash. FPL `ep_next` is comparator-only and is not an input.
 
 `npm run backtest` enforces these holdout gates:
 
 - MAE and gameweek rank correlation beat the recent-form baseline;
 - the historically calibrated 5+ model estimate beats the base-rate Brier score;
 - expected calibration error is at most 0.08.
+- every position and the high-minutes candidate cohort beat their own base-rate Brier score, remain within the calibration limit, and have a gameweek-clustered 95% Brier-difference interval below zero;
 - double-gameweek probability beats its base-rate Brier score, has expected calibration error at most 0.08, and absolute bias at most 0.05.
 
-Captain hit rate plus positional and double-gameweek slices are reported as diagnostics. A valid fixture feed with no next-gameweek fixture is treated as a confirmed blank, so the player is excluded. Missing or invalid fixture data fails safely instead of creating neutral projections.
+Captain hit rate plus positional and double-gameweek slices are reported as diagnostics. The DGW slice passes the row-level Brier, calibration, and bias thresholds, but spans only 11 held-out gameweeks and its gameweek-clustered interval overlaps zero; the API and player detail therefore mark DGW evidence as limited. A valid fixture feed with no next-gameweek fixture is treated as a confirmed blank, so the player is excluded. Missing or invalid fixture data fails safely instead of creating neutral projections.
 
 ## API
 

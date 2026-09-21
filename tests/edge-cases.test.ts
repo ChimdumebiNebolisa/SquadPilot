@@ -13,7 +13,12 @@ import type { NormalizedPlayer, NormalizedTeam, OpponentHistoryView } from "@/li
 import { normalizeVaastavRows } from "@/lib/historical/normalize";
 import { extractFeaturesForPlayer } from "@/lib/scoring/features";
 import { buildPlayerExplanation } from "@/lib/scoring/explain";
-import { MODEL_FEATURES, type ModelFeatureVector } from "@/lib/scoring/model-features";
+import {
+  FIVE_PLUS_FEATURES,
+  MODEL_FEATURES,
+  type FivePlusFeatureVector,
+  type ModelFeatureVector,
+} from "@/lib/scoring/model-features";
 import { predictWithModelArtifact, type PositionModel, type ScoringModelArtifact } from "@/lib/scoring/model-runtime";
 import { startOutlookLabel } from "@/lib/scoring/start-outlook";
 import type { FactorContribution, PlayerFeatureVector } from "@/lib/scoring/types";
@@ -85,6 +90,7 @@ test("normalizers cover coercible optional fields and reject invalid core fields
   assert.equal(normalized.players[0].expectedGoals, 1.2);
   assert.equal(normalized.teams[0].strength, null);
   assert.throws(() => normalizeBootstrap({ elements: [], teams: [{ id: 0 }] }), FplSchemaError);
+  assert.throws(() => normalizeBootstrap({ elements: [], teams: [] }), FplSchemaError);
   assert.throws(() => normalizeBootstrap({ elements: [{ id: 1, code: 1, web_name: "X", first_name: "X", second_name: "Y", team: 1, team_code: 1, element_type: 5, now_cost: 1 }], teams: [] }), FplSchemaError);
   assert.throws(() => normalizeFixtures([]), FplSchemaError);
   assert.throws(() => normalizeBootstrap(null), FplSchemaError);
@@ -146,7 +152,7 @@ test("feature extraction covers availability, set pieces, no-fixture and opponen
   };
   const result = extractFeaturesForPlayer(player({ chanceOfPlayingNextRound: 50 }), [team(1), team(2)], fixtures, {
     gameweeksPlayed: 1,
-    completedTeamFixtures: 0,
+    completedTeamFixtures: 10,
     nextGameweek: 2,
     opponentHistory: [history],
     previousSeasonPointsPer90: 7,
@@ -155,6 +161,17 @@ test("feature extraction covers availability, set pieces, no-fixture and opponen
   assert.equal(result.features.setPiece, 1);
   assert.equal(result.features.attackingUpside, 1);
   assert.equal(result.features.historicalVsOpponent, 0.5);
+  assert.equal(result.fivePlusFeatures.seasonPointsPerFixture, 0.2);
+  assert.equal(result.fivePlusFeatures.minutesPerTeamFixture, 0.15);
+  assert.equal(result.expectedMinutes, 6.75);
+
+  const available = extractFeaturesForPlayer(player({ chanceOfPlayingNextRound: 100 }), [team(1), team(2)], fixtures, {
+    gameweeksPlayed: 10,
+    completedTeamFixtures: 10,
+    nextGameweek: 2,
+  });
+  assert.deepEqual(available.fivePlusFeatures, result.fivePlusFeatures);
+  assert.notEqual(available.expectedMinutes, result.expectedMinutes);
 });
 
 test("historical normalization rejects incomplete identity and handles partial records", () => {
@@ -207,20 +224,27 @@ test("start outlook uses broad labels instead of pseudo-precise percentages", ()
 
 test("double gameweeks use their dedicated five-plus calibration", () => {
   const coefficients = Object.fromEntries(MODEL_FEATURES.map((feature) => [feature, 0])) as PositionModel["coefficients"];
+  const fivePlusCoefficients = Object.fromEntries(FIVE_PLUS_FEATURES.map((feature) => [feature, 0])) as PositionModel["fivePlus"]["coefficients"];
   const positionModel: PositionModel = {
     intercept: 1,
     coefficients,
     pointsCalibration: [{ threshold: 15, value: 1 }],
-    fivePlusCalibration: [{ threshold: 15, value: 0.1 }],
     recentFormBlend: 0,
+    fivePlus: {
+      intercept: 0,
+      coefficients: fivePlusCoefficients,
+      calibration: [{ threshold: 0.5, value: 0.1 }],
+    },
   };
   const artifact: ScoringModelArtifact = {
     features: MODEL_FEATURES,
+    fivePlusFeatures: FIVE_PLUS_FEATURES,
     models: { GK: positionModel, DEF: positionModel, MID: positionModel, FWD: positionModel },
-    doubleGameweekFivePlusCalibration: [{ threshold: 30, value: 0.7 }],
+    doubleGameweekFivePlusCalibration: [{ threshold: 0.5, value: 0.7 }],
   };
   const features = Object.fromEntries(MODEL_FEATURES.map((feature) => [feature, 0])) as ModelFeatureVector;
+  const fivePlusFeatures = Object.fromEntries(FIVE_PLUS_FEATURES.map((feature) => [feature, 0])) as FivePlusFeatureVector;
 
-  assert.equal(predictWithModelArtifact(artifact, "FWD", features, 1).fivePlusProbability, 10);
-  assert.equal(predictWithModelArtifact(artifact, "FWD", features, 2).fivePlusProbability, 70);
+  assert.equal(predictWithModelArtifact(artifact, "FWD", features, fivePlusFeatures, 1).fivePlusProbability, 10);
+  assert.equal(predictWithModelArtifact(artifact, "FWD", features, fivePlusFeatures, 2).fivePlusProbability, 70);
 });

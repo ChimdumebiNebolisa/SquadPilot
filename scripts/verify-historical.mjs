@@ -53,12 +53,21 @@ for (const season of manifest.seasons) {
 const model = JSON.parse(await readFile(join(root, "data", "model", "scoring-model.json"), "utf8"));
 const { version, contentHash, ...content } = model;
 const expectedHash = createHash("sha256").update(JSON.stringify(content)).digest("hex");
-if (model.schemaVersion !== 2
+if (model.schemaVersion !== 3
+  || !Array.isArray(model.fivePlusFeatures)
+  || model.fivePlusFeatures.length === 0
   || !Array.isArray(model.doubleGameweekFivePlusCalibration)
   || model.doubleGameweekFivePlusCalibration.length === 0
   || model.validation?.releaseGates?.doubleGameweekBrierBeatsBaseRate !== true
   || model.validation?.releaseGates?.doubleGameweekCalibrationWithinLimit !== true
   || model.validation?.releaseGates?.doubleGameweekBiasWithinLimit !== true
+  || model.validation?.releaseGates?.everyPositionBrierBeatsBaseRate !== true
+  || model.validation?.releaseGates?.everyPositionCalibrationWithinLimit !== true
+  || model.validation?.releaseGates?.activeCandidateBrierBeatsBaseRate !== true
+  || model.validation?.releaseGates?.activeCandidateCalibrationWithinLimit !== true
+  || model.validation?.releaseGates?.clusteredBrierImprovementLikely !== true
+  || model.validation?.releaseGates?.everyPositionClusteredBrierImprovementLikely !== true
+  || model.validation?.releaseGates?.activeCandidateClusteredBrierImprovementLikely !== true
   || contentHash !== expectedHash
   || version !== expectedHash.slice(0, 12)
   || model.validation?.releasePassed !== true) {

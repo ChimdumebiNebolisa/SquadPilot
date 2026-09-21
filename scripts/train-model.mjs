@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   buildWalkForwardSamples,
   evaluateModels,
+  FIVE_PLUS_FEATURES,
   loadTrainingSeason,
   MODEL_FEATURES,
   trainDoubleGameweekCalibration,
@@ -21,8 +22,9 @@ const doubleGameweekFivePlusCalibration = trainDoubleGameweekCalibration(models,
 const validation = evaluateModels(models, validationSamples, doubleGameweekFivePlusCalibration);
 
 const content = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   features: MODEL_FEATURES,
+  fivePlusFeatures: FIVE_PLUS_FEATURES,
   trainingSeason,
   validationSeason,
   sourceCommit: trainingSnapshot.source.commitSha,

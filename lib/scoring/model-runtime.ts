@@ -1,5 +1,10 @@
 import type { PlayerPosition } from "@/lib/fpl/types";
-import { MODEL_FEATURES, type ModelFeature, type ModelFeatureVector } from "@/lib/scoring/model-features";
+import type {
+  FivePlusFeature,
+  FivePlusFeatureVector,
+  ModelFeature,
+  ModelFeatureVector,
+} from "@/lib/scoring/model-features";
 
 export interface CalibrationPoint {
   threshold: number;
@@ -10,12 +15,17 @@ export interface PositionModel {
   intercept: number;
   coefficients: Record<ModelFeature, number>;
   pointsCalibration: CalibrationPoint[];
-  fivePlusCalibration: CalibrationPoint[];
   recentFormBlend: number;
+  fivePlus: {
+    intercept: number;
+    coefficients: Record<FivePlusFeature, number>;
+    calibration: CalibrationPoint[];
+  };
 }
 
 export interface ScoringModelArtifact {
   features: readonly ModelFeature[];
+  fivePlusFeatures: readonly FivePlusFeature[];
   models: Record<PlayerPosition, PositionModel>;
   doubleGameweekFivePlusCalibration?: CalibrationPoint[];
 }
@@ -38,16 +48,23 @@ function calibrate(points: CalibrationPoint[], value: number): number {
   return points.at(-1)?.value ?? value;
 }
 
+function sigmoid(value: number): number {
+  if (value >= 0) return 1 / (1 + Math.exp(-value));
+  const exponential = Math.exp(value);
+  return exponential / (1 + exponential);
+}
+
 /** Exact prediction path used by both the production scorer and holdout evaluation. */
 export function predictWithModelArtifact(
   artifact: ScoringModelArtifact,
   position: PlayerPosition,
   features: ModelFeatureVector,
+  fivePlusFeatures: FivePlusFeatureVector,
   fixtureCount: number,
 ): { projectedPoints: number; fivePlusProbability: number } {
   const model = artifact.models[position];
   const rawPerFixture = clamp(
-    model.intercept + MODEL_FEATURES.reduce(
+    model.intercept + artifact.features.reduce(
       (sum, feature) => sum + model.coefficients[feature] * features[feature],
       0,
     ),
@@ -61,14 +78,20 @@ export function predictWithModelArtifact(
     0,
     15,
   );
+  const rawFivePlusProbability = sigmoid(
+    model.fivePlus.intercept + artifact.fivePlusFeatures.reduce(
+      (sum, feature) => sum + model.fivePlus.coefficients[feature] * fivePlusFeatures[feature],
+      0,
+    ),
+  );
   return {
     projectedPoints: Number((blendedPerFixture * fixtureCount).toFixed(1)),
     fivePlusProbability: Number((clamp(
       calibrate(
         fixtureCount > 1 && artifact.doubleGameweekFivePlusCalibration?.length
           ? artifact.doubleGameweekFivePlusCalibration
-          : model.fivePlusCalibration,
-        rawPerFixture * fixtureCount,
+          : model.fivePlus.calibration,
+        rawFivePlusProbability,
       ),
     ) * 100).toFixed(1)),
   };

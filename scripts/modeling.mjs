@@ -2,12 +2,17 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { gunzip } from "node:zlib";
 import { promisify } from "node:util";
-import { buildModelFeatures, MODEL_FEATURES } from "../lib/scoring/model-features.ts";
+import {
+  buildFivePlusReplayFeatures,
+  buildModelFeatures,
+  FIVE_PLUS_FEATURES,
+  MODEL_FEATURES,
+} from "../lib/scoring/model-features.ts";
 import { predictWithModelArtifact } from "../lib/scoring/model-runtime.ts";
 
 const gunzipAsync = promisify(gunzip);
 
-export { MODEL_FEATURES };
+export { FIVE_PLUS_FEATURES, MODEL_FEATURES };
 
 export const POSITIONS = ["GK", "DEF", "MID", "FWD"];
 
@@ -61,7 +66,7 @@ function aggregateCurrentRound(records) {
   return [...players.values()];
 }
 
-function playerFeatures(history, currentRecords) {
+function playerFeatures(history, currentRecords, completedTeamFixtures) {
   const recent = history.slice(-5);
   const priorPoints = history.reduce((sum, record) => sum + (Number(record.totalPoints) || 0), 0);
   const priorMinutes = history.reduce((sum, record) => sum + (Number(record.minutes) || 0), 0);
@@ -77,28 +82,42 @@ function playerFeatures(history, currentRecords) {
   const baselinePer90 = priorMinutes > 0 ? priorPoints / priorMinutes * 90 : pointsPerGame;
   const opponentPer90 = opponentMinutes > 0 ? opponentPoints / opponentMinutes * 90 : baselinePer90 * 0.6;
 
-  return buildModelFeatures({
-    recentPointsPerMatch: recentPoints,
-    pointsPerGame,
-    expectedMinutesFraction: priorMinutes / Math.max(1, history.length) / 90,
-    averageFixtureDifficulty: averageDifficulty,
-    homeFixtureFraction: homeFraction,
-    price,
-    historicalOpponentRatio: baselinePer90 > 0
-      ? opponentPer90 / (baselinePer90 * 1.2)
-      : 0.5,
-  });
+  return {
+    points: buildModelFeatures({
+      recentPointsPerMatch: recentPoints,
+      pointsPerGame,
+      expectedMinutesFraction: priorMinutes / Math.max(1, history.length) / 90,
+      averageFixtureDifficulty: averageDifficulty,
+      homeFixtureFraction: homeFraction,
+      price,
+      historicalOpponentRatio: baselinePer90 > 0
+        ? opponentPer90 / (baselinePer90 * 1.2)
+        : 0.5,
+    }),
+    fivePlus: buildFivePlusReplayFeatures({
+      totalPoints: priorPoints,
+      minutes: priorMinutes,
+      completedTeamFixtures,
+      averageFixtureDifficulty: averageDifficulty,
+      homeFixtureFraction: homeFraction,
+      price,
+      fixtureCount: currentRecords.length,
+    }),
+  };
 }
 
 export function buildWalkForwardSamples(records) {
   const historyByPlayer = new Map();
+  const completedFixturesByTeam = new Map();
   const samples = [];
 
   for (const [gameweek, roundRecords] of groupByRound(records)) {
     for (const current of aggregateCurrentRound(roundRecords)) {
       const history = historyByPlayer.get(current.playerCode) ?? [];
       if (history.length === 0 || !POSITIONS.includes(current.position)) continue;
-      const features = playerFeatures(history, current.records);
+      const teamCode = current.records[0]?.teamCode;
+      const completedTeamFixtures = completedFixturesByTeam.get(teamCode)?.size ?? 0;
+      const featureSets = playerFeatures(history, current.records, completedTeamFixtures);
       const fixtureCount = current.records.length;
       samples.push({
         season: current.records[0].source.season,
@@ -106,12 +125,13 @@ export function buildWalkForwardSamples(records) {
         playerCode: current.playerCode,
         playerName: current.playerName,
         position: current.position,
-        features,
+        features: featureSets.points,
+        fivePlusFeatures: featureSets.fivePlus,
         fixtureCount,
         target: current.totalPoints,
         targetPerFixture: current.totalPoints / fixtureCount,
         fivePlus: current.totalPoints >= 5 ? 1 : 0,
-        recentFormBaseline: features.recentForm * 10 * fixtureCount,
+        recentFormBaseline: featureSets.points.recentForm * 10 * fixtureCount,
       });
     }
 
@@ -119,10 +139,50 @@ export function buildWalkForwardSamples(records) {
       const history = historyByPlayer.get(record.playerCode) ?? [];
       history.push(record);
       historyByPlayer.set(record.playerCode, history);
+      const fixtures = completedFixturesByTeam.get(record.teamCode) ?? new Set();
+      fixtures.add(record.source.fixtureId);
+      completedFixturesByTeam.set(record.teamCode, fixtures);
     }
   }
 
   return samples;
+}
+
+function sigmoid(value) {
+  if (value >= 0) return 1 / (1 + Math.exp(-value));
+  const exponential = Math.exp(value);
+  return exponential / (1 + exponential);
+}
+
+function fitLogistic(samples, lambda = 2) {
+  const rows = samples.map((sample) => [1, ...FIVE_PLUS_FEATURES.map((feature) => sample.fivePlusFeatures[feature])]);
+  const size = FIVE_PLUS_FEATURES.length + 1;
+  const weights = Array(size).fill(0);
+  for (let iteration = 0; iteration < 50; iteration += 1) {
+    const matrix = Array.from({ length: size }, () => Array(size).fill(0));
+    const values = Array(size).fill(0);
+    for (let row = 0; row < rows.length; row += 1) {
+      const probability = clamp(sigmoid(rows[row].reduce((sum, value, index) => sum + value * weights[index], 0)), 1e-6, 1 - 1e-6);
+      const variance = probability * (1 - probability);
+      for (let left = 0; left < size; left += 1) {
+        values[left] += rows[row][left] * (samples[row].fivePlus - probability);
+        for (let right = 0; right < size; right += 1) {
+          matrix[left][right] += rows[row][left] * rows[row][right] * variance;
+        }
+      }
+    }
+    for (let index = 1; index < size; index += 1) {
+      matrix[index][index] += lambda;
+      values[index] -= lambda * weights[index];
+    }
+    const update = solveLinearSystem(matrix, values);
+    for (let index = 0; index < size; index += 1) weights[index] += update[index];
+    if (Math.max(...update.map(Math.abs)) < 1e-8) break;
+  }
+  return {
+    intercept: weights[0],
+    coefficients: Object.fromEntries(FIVE_PLUS_FEATURES.map((feature, index) => [feature, weights[index + 1]])),
+  };
 }
 
 function solveLinearSystem(matrix, values) {
@@ -177,9 +237,19 @@ export function rawPrediction(model, features) {
   );
 }
 
-function fitIsotonic(pairs, maximumBins = 60) {
+export function rawFivePlusProbability(model, features) {
+  return sigmoid(
+    model.intercept + FIVE_PLUS_FEATURES.reduce(
+      (sum, feature) => sum + model.coefficients[feature] * features[feature],
+      0,
+    ),
+  );
+}
+
+function fitIsotonic(pairs, maximumBins = 60, minimumBinSize = 25) {
   const sorted = [...pairs].sort((left, right) => left.x - right.x);
-  const binSize = Math.max(1, Math.ceil(sorted.length / maximumBins));
+  const binCount = Math.max(1, Math.min(maximumBins, Math.floor(sorted.length / minimumBinSize)));
+  const binSize = Math.max(1, Math.ceil(sorted.length / binCount));
   const blocks = [];
   for (let start = 0; start < sorted.length; start += binSize) {
     const bin = sorted.slice(start, start + binSize);
@@ -234,14 +304,25 @@ export function trainModels(samples) {
       sample,
       perFixture: rawPrediction(storedModel, sample.features),
     }));
+    const probabilityModel = fitLogistic(positionSamples);
+    const storedProbabilityModel = {
+      intercept: round(probabilityModel.intercept),
+      coefficients: Object.fromEntries(Object.entries(probabilityModel.coefficients).map(([key, value]) => [key, round(value)])),
+    };
+    const singleGameweekProbabilities = positionSamples
+      .filter((sample) => sample.fixtureCount === 1)
+      .map((sample) => ({
+        x: rawFivePlusProbability(storedProbabilityModel, sample.fivePlusFeatures),
+        y: sample.fivePlus,
+      }));
     return [position, {
       ...storedModel,
       pointsCalibration: fitIsotonic(scored.map(({ sample, perFixture }) => ({ x: perFixture, y: sample.targetPerFixture }))),
-      fivePlusCalibration: fitIsotonic(scored.map(({ sample, perFixture }) => ({
-        x: perFixture * sample.fixtureCount,
-        y: sample.fivePlus,
-      }))),
       recentFormBlend: 0.9,
+      fivePlus: {
+        ...storedProbabilityModel,
+        calibration: fitIsotonic(singleGameweekProbabilities),
+      },
       sampleSize: positionSamples.length,
     }];
   }));
@@ -251,16 +332,17 @@ export function trainDoubleGameweekCalibration(models, samples) {
   return fitIsotonic(samples
     .filter((sample) => sample.fixtureCount > 1)
     .map((sample) => ({
-      x: rawPrediction(models[sample.position], sample.features) * sample.fixtureCount,
+      x: rawFivePlusProbability(models[sample.position].fivePlus, sample.fivePlusFeatures),
       y: sample.fivePlus,
     })));
 }
 
 export function predictSample(models, sample, doubleGameweekFivePlusCalibration = []) {
   const prediction = predictWithModelArtifact(
-    { features: MODEL_FEATURES, models, doubleGameweekFivePlusCalibration },
+    { features: MODEL_FEATURES, fivePlusFeatures: FIVE_PLUS_FEATURES, models, doubleGameweekFivePlusCalibration },
     sample.position,
     sample.features,
+    sample.fivePlusFeatures,
     sample.fixtureCount,
   );
   return {
@@ -347,6 +429,19 @@ export function evaluateModels(models, samples, doubleGameweekFivePlusCalibratio
   const probabilitySlice = (subset) => {
     const observedRate = mean(subset.map((row) => row.sample.fivePlus));
     const meanProbability = mean(subset.map((row) => row.probability));
+    const brierDifferencesByRound = new Map();
+    for (const row of subset) {
+      const key = `${row.sample.season}:${row.sample.gameweek}`;
+      const values = brierDifferencesByRound.get(key) ?? [];
+      values.push((row.probability - row.sample.fivePlus) ** 2 - (observedRate - row.sample.fivePlus) ** 2);
+      brierDifferencesByRound.set(key, values);
+    }
+    const roundDifferences = [...brierDifferencesByRound.values()].map(mean);
+    const meanRoundDifference = mean(roundDifferences);
+    const roundDifferenceVariance = roundDifferences.length > 1
+      ? roundDifferences.reduce((sum, value) => sum + (value - meanRoundDifference) ** 2, 0) / (roundDifferences.length - 1)
+      : 0;
+    const confidenceRadius = 1.96 * Math.sqrt(roundDifferenceVariance / Math.max(1, roundDifferences.length));
     return {
       samples: subset.length,
       brierScore: mean(subset.map((row) => (row.probability - row.sample.fivePlus) ** 2)),
@@ -355,6 +450,12 @@ export function evaluateModels(models, samples, doubleGameweekFivePlusCalibratio
       meanProbability,
       observedRate,
       bias: meanProbability - observedRate,
+      gameweekClusteredBrierDifference: {
+        gameweeks: roundDifferences.length,
+        mean: meanRoundDifference,
+        lower95: meanRoundDifference - confidenceRadius,
+        upper95: meanRoundDifference + confidenceRadius,
+      },
     };
   };
   const result = {
@@ -370,10 +471,8 @@ export function evaluateModels(models, samples, doubleGameweekFivePlusCalibratio
     byPosition: Object.fromEntries(POSITIONS.map((position) => {
       const subset = rows.filter((row) => row.sample.position === position);
       return [position, {
-        samples: subset.length,
+        ...probabilitySlice(subset),
         meanAbsoluteError: mean(subset.map((row) => row.error)),
-        brierScore: mean(subset.map((row) => (row.probability - row.sample.fivePlus) ** 2)),
-        expectedCalibrationError: expectedCalibrationError(subset),
         rankCorrelation: rankCorrelationByRound(subset, "projection"),
         recentFormBaselineRankCorrelation: rankCorrelationByRound(
           subset.map((row) => ({ ...row, baseline: row.sample.recentFormBaseline })),
@@ -381,6 +480,10 @@ export function evaluateModels(models, samples, doubleGameweekFivePlusCalibratio
         ),
       }];
     })),
+    activeCandidates: (() => {
+      const subset = rows.filter((row) => row.sample.fivePlusFeatures.minutesPerTeamFixture >= 2 / 3);
+      return probabilitySlice(subset);
+    })(),
     doubleGameweeks: (() => {
       const subset = rows.filter((row) => row.sample.fixtureCount > 1);
       return { ...probabilitySlice(subset), meanAbsoluteError: mean(subset.map((row) => row.error)) };
@@ -395,6 +498,17 @@ export function evaluateModels(models, samples, doubleGameweekFivePlusCalibratio
     rankBeatsRecentForm: result.rankCorrelation > result.recentFormBaselineRankCorrelation,
     brierBeatsBaseRate: result.brierScore < result.baseRateBrierScore,
     calibrationWithinLimit: result.expectedCalibrationError <= 0.08,
+    clusteredBrierImprovementLikely: probabilitySlice(rows).gameweekClusteredBrierDifference.upper95 < 0,
+    everyPositionBrierBeatsBaseRate: Object.values(result.byPosition)
+      .every((position) => position.brierScore < position.baseRateBrierScore),
+    everyPositionCalibrationWithinLimit: Object.values(result.byPosition)
+      .every((position) => position.expectedCalibrationError <= 0.08),
+    everyPositionClusteredBrierImprovementLikely: Object.values(result.byPosition)
+      .every((position) => position.gameweekClusteredBrierDifference.upper95 < 0),
+    activeCandidateBrierBeatsBaseRate: result.activeCandidates.brierScore < result.activeCandidates.baseRateBrierScore,
+    activeCandidateCalibrationWithinLimit: result.activeCandidates.expectedCalibrationError <= 0.08,
+    activeCandidateClusteredBrierImprovementLikely:
+      result.activeCandidates.gameweekClusteredBrierDifference.upper95 < 0,
     doubleGameweekBrierBeatsBaseRate: result.doubleGameweeks.samples === 0
       || result.doubleGameweeks.brierScore < result.doubleGameweeks.baseRateBrierScore,
     doubleGameweekCalibrationWithinLimit: result.doubleGameweeks.samples === 0
