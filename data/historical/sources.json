@@ -3,8 +3,13 @@
   "repository": "https://github.com/vaastav/Fantasy-Premier-League",
   "commitSha": "9779cdbc0c07f6c900c2d0c181ddf6bb9c800f88",
   "commitTimestamp": "2026-08-28T09:47:53Z",
-  "seasons": ["2024-25", "2025-26"],
+  "seasons": ["2023-24", "2024-25", "2025-26"],
   "sha256": {
+    "2023-24": {
+      "mergedGw": "e9c09c8856f1c86b4f920f46ddd5033af83409439dfda53be925df2a3e7c8a9e",
+      "fixtures": "d8521bdbb80edb5141bc17df71bf6026275f2e56fd6a6dc6041b3ae23a39ce6a",
+      "players": "43d8cf5efb3d901f2499558c40b392b7f0ee22afe28030f36266ad29024c63d9"
+    },
     "2024-25": {
       "mergedGw": "5bbbcba6353b4c72ad273adcc8e3aa451946a826564679788f45b1cb3325b84e",
       "fixtures": "ce696e187569ca7c45da2562811d3c38f525b58e65575531be37bebd0769ee28",
